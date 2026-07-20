@@ -2,9 +2,568 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>테스트</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Flappy Friends</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #70c5ce;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    font-family: sans-serif;
+  }
+
+  #gameCanvas {
+    background-color: #70c5ce;
+    display: block;
+  }
+
+  #overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+  }
+
+  .panel {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    border-radius: 15px;
+    pointer-events: auto;
+    color: white;
+    text-align: center;
+  }
+
+  .panel.show {
+    display: flex;
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 15px;
+  }
+
+  h2 {
+    font-size: 16px;
+    margin-bottom: 10px;
+  }
+
+  .charRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .charBox {
+    background-color: white;
+    border: 3px solid transparent;
+    border-radius: 10px;
+    padding: 5px;
+    cursor: pointer;
+  }
+
+  .charBox.picked {
+    border-color: gold;
+  }
+
+  .charLabel {
+    color: black;
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  button {
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    border-radius: 25px;
+    cursor: pointer;
+  }
+
+  #scoreBox {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 40px;
+    color: white;
+    font-weight: bold;
+    display: none;
+  }
+
+  p {
+    font-size: 12px;
+    margin-top: 10px;
+  }
+</style>
 </head>
 <body>
-<h1>안녕하세요! 이 화면이 보이면 배포 성공입니다.</h1>
+
+<canvas id="gameCanvas" width="360" height="600"></canvas>
+<div id="scoreBox">0</div>
+
+<div id="overlay">
+  <div class="panel show" id="startPanel">
+    <h1>Flappy Friends</h1>
+    <h2>캐릭터를 선택하세요</h2>
+    <div class="charRow" id="charRow"></div>
+    <button id="startButton">게임 시작</button>
+    <p>화면을 터치해서 날아오르세요</p>
+  </div>
+
+  <div class="panel" id="overPanel">
+    <h1>게임 오버</h1>
+    <h2 id="scoreText">점수: 0</h2>
+    <h2 id="bestText">최고 점수: 0</h2>
+    <button id="retryButton">다시 하기</button>
+  </div>
+</div>
+
+<script>
+
+// ===============================
+// 캔버스 기본 설정
+// ===============================
+var canvas = document.getElementById("gameCanvas");
+var ctx = canvas.getContext("2d");
+
+function fitCanvas() {
+  var w = window.innerWidth;
+  var h = window.innerHeight;
+  var ratio = 360 / 600;
+
+  var newW = w;
+  var newH = w / ratio;
+
+  if (newH > h) {
+    newH = h;
+    newW = h * ratio;
+  }
+
+  canvas.style.width = newW + "px";
+  canvas.style.height = newH + "px";
+}
+fitCanvas();
+window.addEventListener("resize", fitCanvas);
+
+var GAME_W = canvas.width;
+var GAME_H = canvas.height;
+var GROUND_H = 80;
+
+// ===============================
+// 캐릭터 3종류 정의
+// ===============================
+var CHAR_LIST = [
+  { name: "병아리", bodyColor: "#FFD93D", wingColor: "#FFA500", beakColor: "#FF6B6B" },
+  { name: "문어", bodyColor: "#FF6B9D", wingColor: "#C44569", beakColor: "#FFFFFF" },
+  { name: "드래곤", bodyColor: "#6BCB77", wingColor: "#4D96FF", beakColor: "#FFD93D" }
+];
+
+var pickedChar = 0;
+
+// ===============================
+// 캐릭터 그리기 함수 (모두 같은 기본 모양 + 색깔로 차별화)
+// ===============================
+function paintBird(context, cx, cy, angle, charInfo, isPreview) {
+  context.save();
+  context.translate(cx, cy);
+  if (!isPreview) {
+    context.rotate(angle);
+  }
+
+  var r = 16;
+
+  // 몸통
+  context.fillStyle = charInfo.bodyColor;
+  context.beginPath();
+  context.arc(0, 0, r, 0, Math.PI * 2);
+  context.fill();
+
+  // 날개
+  context.fillStyle = charInfo.wingColor;
+  context.beginPath();
+  context.ellipse(-r * 0.3, r * 0.2, r * 0.6, r * 0.4, -0.4, 0, Math.PI * 2);
+  context.fill();
+
+  // 눈 (흰 배경 + 검은 눈동자)
+  context.fillStyle = "#FFFFFF";
+  context.beginPath();
+  context.arc(r * 0.35, -r * 0.2, r * 0.32, 0, Math.PI * 2);
+  context.fill();
+
+  context.fillStyle = "#333333";
+  context.beginPath();
+  context.arc(r * 0.42, -r * 0.2, r * 0.15, 0, Math.PI * 2);
+  context.fill();
+
+  // 부리
+  context.fillStyle = charInfo.beakColor;
+  context.beginPath();
+  context.moveTo(r * 0.7, 0);
+  context.lineTo(r * 1.3, r * 0.15);
+  context.lineTo(r * 0.7, r * 0.3);
+  context.closePath();
+  context.fill();
+
+  // 볼터치
+  context.fillStyle = "rgba(255,150,150,0.5)";
+  context.beginPath();
+  context.arc(0, r * 0.3, r * 0.18, 0, Math.PI * 2);
+  context.fill();
+
+  context.restore();
+}
+
+// ===============================
+// 캐릭터 선택 화면 만들기
+// ===============================
+var charRowEl = document.getElementById("charRow");
+
+for (var i = 0; i < CHAR_LIST.length; i++) {
+  (function(index) {
+    var box = document.createElement("div");
+    box.className = "charBox";
+    if (index === 0) {
+      box.className += " picked";
+    }
+
+    var miniCanvas = document.createElement("canvas");
+    miniCanvas.width = 50;
+    miniCanvas.height = 50;
+
+    var label = document.createElement("div");
+    label.className = "charLabel";
+    label.textContent = CHAR_LIST[index].name;
+
+    box.appendChild(miniCanvas);
+    box.appendChild(label);
+    charRowEl.appendChild(box);
+
+    var miniCtx = miniCanvas.getContext("2d");
+    paintBird(miniCtx, 25, 25, 0, CHAR_LIST[index], true);
+
+    box.addEventListener("click", function() {
+      var allBoxes = document.querySelectorAll(".charBox");
+      for (var k = 0; k < allBoxes.length; k++) {
+        allBoxes[k].classList.remove("picked");
+      }
+      box.classList.add("picked");
+      pickedChar = index;
+    });
+  })(i);
+}
+
+// ===============================
+// 게임 상태 변수
+// ===============================
+var GRAVITY = 0.4;
+var JUMP_POWER = -7.5;
+var PIPE_GAP = 150;
+var PIPE_WIDTH = 55;
+var PIPE_SPACING = 90;
+var PIPE_SPEED = 2.2;
+
+var gameRunning = false;
+var birdX, birdY, birdVY, birdAngle;
+var pipeList = [];
+var currentScore = 0;
+var bestScore = 0;
+var frameNum = 0;
+var groundX = 0;
+
+// 로컬스토리지 최고점수 불러오기 (오류 방지 처리)
+function loadBestScore() {
+  try {
+    var saved = localStorage.getItem("flappyBestScore");
+    if (saved !== null) {
+      bestScore = parseInt(saved, 10);
+      if (isNaN(bestScore)) {
+        bestScore = 0;
+      }
+    }
+  } catch (err) {
+    bestScore = 0;
+  }
+}
+loadBestScore();
+
+function saveBestScore() {
+  try {
+    localStorage.setItem("flappyBestScore", String(bestScore));
+  } catch (err) {
+    // 저장 실패 시 무시하고 진행
+  }
+}
+
+// ===============================
+// 게임 초기화
+// ===============================
+function resetGame() {
+  birdX = GAME_W * 0.3;
+  birdY = GAME_H * 0.5;
+  birdVY = 0;
+  birdAngle = 0;
+  pipeList = [];
+  currentScore = 0;
+  frameNum = 0;
+}
+
+// ===============================
+// 파이프 생성
+// ===============================
+function spawnPipe() {
+  var minTop = 40;
+  var maxTop = GAME_H - GROUND_H - PIPE_GAP - 40;
+  if (maxTop < minTop) {
+    maxTop = minTop + 20;
+  }
+  var topH = minTop + Math.random() * (maxTop - minTop);
+
+  pipeList.push({
+    x: GAME_W,
+    topHeight: topH,
+    bottomY: topH + PIPE_GAP,
+    passed: false
+  });
+}
+
+// ===============================
+// 충돌 검사
+// ===============================
+function isColliding() {
+  var birdR = 15;
+
+  if (birdY - birdR < 0) {
+    return true;
+  }
+  if (birdY + birdR > GAME_H - GROUND_H) {
+    return true;
+  }
+
+  for (var i = 0; i < pipeList.length; i++) {
+    var p = pipeList[i];
+    var inXRange = (birdX + birdR > p.x) && (birdX - birdR < p.x + PIPE_WIDTH);
+    if (inXRange) {
+      var hitTop = birdY - birdR < p.topHeight;
+      var hitBottom = birdY + birdR > p.bottomY;
+      if (hitTop || hitBottom) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// ===============================
+// 업데이트 로직
+// ===============================
+function updateGame() {
+  if (!gameRunning) {
+    return;
+  }
+
+  frameNum++;
+
+  birdVY += GRAVITY;
+  birdY += birdVY;
+
+  birdAngle = birdVY * 0.04;
+  if (birdAngle > 1.0) birdAngle = 1.0;
+  if (birdAngle < -0.5) birdAngle = -0.5;
+
+  groundX -= PIPE_SPEED;
+
+  if (frameNum % PIPE_SPACING === 0) {
+    spawnPipe();
+  }
+
+  for (var i = 0; i < pipeList.length; i++) {
+    pipeList[i].x -= PIPE_SPEED;
+
+    if (!pipeList[i].passed && pipeList[i].x + PIPE_WIDTH < birdX) {
+      pipeList[i].passed = true;
+      currentScore++;
+      document.getElementById("scoreBox").textContent = String(currentScore);
+    }
+  }
+
+  var keepPipes = [];
+  for (var j = 0; j < pipeList.length; j++) {
+    if (pipeList[j].x > -PIPE_WIDTH) {
+      keepPipes.push(pipeList[j]);
+    }
+  }
+  pipeList = keepPipes;
+
+  if (isColliding()) {
+    stopGame();
+  }
+}
+
+// ===============================
+// 그리기 로직
+// ===============================
+function drawBackground() {
+  ctx.fillStyle = "#70c5ce";
+  ctx.fillRect(0, 0, GAME_W, GAME_H);
+}
+
+function drawPipes() {
+  for (var i = 0; i < pipeList.length; i++) {
+    var p = pipeList[i];
+
+    ctx.fillStyle = "#5cb85c";
+    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
+
+    ctx.fillStyle = "#4a934a";
+    ctx.fillRect(p.x - 4, p.topHeight - 15, PIPE_WIDTH + 8, 15);
+
+    var bottomH = GAME_H - GROUND_H - p.bottomY;
+    ctx.fillStyle = "#5cb85c";
+    ctx.fillRect(p.x, p.bottomY, PIPE_WIDTH, bottomH);
+
+    ctx.fillStyle = "#4a934a";
+    ctx.fillRect(p.x - 4, p.bottomY, PIPE_WIDTH + 8, 15);
+  }
+}
+
+function drawGround() {
+  var groundY = GAME_H - GROUND_H;
+  ctx.fillStyle = "#ded895";
+  ctx.fillRect(0, groundY, GAME_W, GROUND_H);
+
+  ctx.fillStyle = "#c9b968";
+  ctx.fillRect(0, groundY, GAME_W, 10);
+}
+
+function drawScoreOnCanvas() {
+  // 캔버스 내부에도 점수를 표시하지 않음 (HTML 요소로 대체)
+}
+
+function renderGame() {
+  drawBackground();
+  drawPipes();
+  drawGround();
+
+  if (gameRunning) {
+    paintBird(ctx, birdX, birdY, birdAngle, CHAR_LIST[pickedChar], false);
+  }
+}
+
+// ===============================
+// 게임 루프
+// ===============================
+function gameLoop() {
+  updateGame();
+  renderGame();
+  requestAnimationFrame(gameLoop);
+}
+
+// ===============================
+// 화면 전환 함수
+// ===============================
+function showPanel(panelId) {
+  var allPanels = document.querySelectorAll(".panel");
+  for (var i = 0; i < allPanels.length; i++) {
+    allPanels[i].classList.remove("show");
+  }
+  document.getElementById(panelId).classList.add("show");
+}
+
+// ===============================
+// 게임 시작
+// ===============================
+function startGame() {
+  showPanel("");
+  document.getElementById("startPanel").classList.remove("show");
+  document.getElementById("overPanel").classList.remove("show");
+
+  document.getElementById("scoreBox").style.display = "block";
+  document.getElementById("scoreBox").textContent = "0";
+
+  resetGame();
+  gameRunning = true;
+}
+
+// ===============================
+// 게임 종료
+// ===============================
+function stopGame() {
+  gameRunning = false;
+  document.getElementById("scoreBox").style.display = "none";
+
+  if (currentScore > bestScore) {
+    bestScore = currentScore;
+    saveBestScore();
+  }
+
+  document.getElementById("scoreText").textContent = "점수: " + currentScore;
+  document.getElementById("bestText").textContent = "최고 점수: " + bestScore;
+
+  showPanel("overPanel");
+}
+
+// ===============================
+// 점프 동작
+// ===============================
+function doJump() {
+  if (gameRunning) {
+    birdVY = JUMP_POWER;
+  }
+}
+
+// ===============================
+// 버튼 이벤트 연결
+// ===============================
+document.getElementById("startButton").addEventListener("click", function(e) {
+  e.preventDefault();
+  startGame();
+});
+
+document.getElementById("retryButton").addEventListener("click", function(e) {
+  e.preventDefault();
+  document.getElementById("overPanel").classList.remove("show");
+  document.getElementById("startPanel").classList.add("show");
+});
+
+// ===============================
+// 터치 및 클릭 이벤트 (게임 캔버스에서만 작동)
+// ===============================
+canvas.addEventListener("touchstart", function(e) {
+  e.preventDefault();
+  doJump();
+}, { passive: false });
+
+canvas.addEventListener("mousedown", function(e) {
+  doJump();
+});
+
+// ===============================
+// 초기 실행
+// ===============================
+gameLoop();
+
+</script>
+
 </body>
 </html>

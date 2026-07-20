@@ -20,7 +20,7 @@
     overflow: hidden;
     background-color: #70c5ce;
     font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-    touch-action: none;
+    touch-action: manipulation;
   }
 
   #gameContainer {
@@ -47,25 +47,18 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 10;
-  }
-
-  /* UI 화면이 숨겨지면 클릭/터치가 게임 캔버스로 통과되도록 설정 */
-  #uiOverlay.game-active {
-    pointer-events: none;
+    z-index: 100;
   }
 
   .screen {
     display: none;
     flex-direction: column;
     align-items: center;
-    pointer-events: auto;
     text-align: center;
     color: white;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.75);
     padding: 25px 20px;
     border-radius: 20px;
-    backdrop-filter: blur(4px);
     width: 85%;
     max-width: 320px;
   }
@@ -77,6 +70,7 @@
   h1 {
     font-size: 1.8rem;
     margin-bottom: 10px;
+    color: #fff;
     text-shadow: 2px 2px 0px #ff6b6b;
   }
 
@@ -123,7 +117,7 @@
     pointer-events: none;
   }
 
-  button {
+  .btn {
     background: #ff6b6b;
     color: white;
     border: none;
@@ -134,9 +128,11 @@
     box-shadow: 0 4px 0 #d64545;
     cursor: pointer;
     margin-top: 10px;
+    width: 80%;
+    display: inline-block;
   }
 
-  button:active {
+  .btn:active {
     transform: translateY(3px);
     box-shadow: 0 1px 0 #d64545;
   }
@@ -152,7 +148,7 @@
     text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
     display: none;
     pointer-events: none;
-    z-index: 5;
+    z-index: 50;
   }
 
   .guide {
@@ -174,8 +170,8 @@
       <h1>Flappy Friends</h1>
       <h2>캐릭터를 선택하세요</h2>
       <div class="char-select" id="charSelect"></div>
-      <button id="startBtn" type="button">게임 시작</button>
-      <p class="guide">📱 시작 후 화면을 터치해 점프!</p>
+      <div class="btn" id="startBtn">게임 시작</div>
+      <p class="guide">📱 시작 후 화면 어디든 눌러 점프!</p>
     </div>
 
     <!-- 게임오버 화면 -->
@@ -183,7 +179,7 @@
       <h1>게임 오버!</h1>
       <h2 id="finalScore" style="margin-bottom: 5px;">점수: 0</h2>
       <h2 id="bestScore" style="margin-bottom: 15px; color: #ffd700;">최고 점수: 0</h2>
-      <button id="retryBtn" type="button">다시 하기</button>
+      <div class="btn" id="retryBtn">다시 하기</div>
     </div>
   </div>
 </div>
@@ -312,15 +308,11 @@ window.addEventListener('load', function() {
     card.appendChild(pCanvas);
     card.appendChild(name);
     
-    function selectCard(e) {
-      e.stopPropagation();
+    card.onclick = function() {
       document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       selectedCharIndex = index;
-    }
-
-    card.addEventListener('click', selectCard);
-    card.addEventListener('touchstart', selectCard);
+    };
 
     charSelectDiv.appendChild(card);
     drawBird(pCanvas.getContext('2d'), 25, 25, 0, char, true);
@@ -329,7 +321,7 @@ window.addEventListener('load', function() {
   let gameState = 'start'; 
   let bird, pipes, score, bestScore, frameCount;
 
-  bestScore = parseInt(localStorage.getItem('flappyBest_v3')) || 0;
+  bestScore = parseInt(localStorage.getItem('flappyBest_v4')) || 0;
 
   function initGame() {
     bird = {
@@ -438,7 +430,7 @@ window.addEventListener('load', function() {
   function startGame() {
     document.getElementById('startScreen').classList.remove('active');
     document.getElementById('gameOverScreen').classList.remove('active');
-    uiOverlay.classList.add('game-active');
+    uiOverlay.style.display = 'none'; // UI 완전히 숨김
     
     scoreDisplay.style.display = 'block';
     scoreDisplay.textContent = '0';
@@ -449,12 +441,12 @@ window.addEventListener('load', function() {
 
   function endGame() {
     gameState = 'gameover';
-    uiOverlay.classList.remove('game-active');
+    uiOverlay.style.display = 'flex'; // UI 다시 표시
     scoreDisplay.style.display = 'none';
 
     if (score > bestScore) {
       bestScore = score;
-      localStorage.setItem('flappyBest_v3', bestScore);
+      localStorage.setItem('flappyBest_v4', bestScore);
     }
 
     document.getElementById('finalScore').textContent = `점수: ${score}`;
@@ -462,44 +454,24 @@ window.addEventListener('load', function() {
     document.getElementById('gameOverScreen').classList.add('active');
   }
 
-  // 시작 & 리트라이 버튼 이벤트
-  const startBtn = document.getElementById('startBtn');
-  const retryBtn = document.getElementById('retryBtn');
-
-  function handleStart(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  // 버튼 온클릭 이벤트
+  document.getElementById('startBtn').onclick = function() {
     startGame();
-  }
+  };
 
-  startBtn.addEventListener('click', handleStart);
-  startBtn.addEventListener('touchstart', handleStart);
-
-  function handleRetry(e) {
-    e.preventDefault();
-    e.stopPropagation();
+  document.getElementById('retryBtn').onclick = function() {
     document.getElementById('gameOverScreen').classList.remove('active');
     document.getElementById('startScreen').classList.add('active');
-  }
+  };
 
-  retryBtn.addEventListener('click', handleRetry);
-  retryBtn.addEventListener('touchstart', handleRetry);
-
-  // 게임 중 터치/클릭으로 점프
-  window.addEventListener('touchstart', (e) => {
-    if (gameState === 'playing') {
-      e.preventDefault();
-      flap();
-    }
-  }, { passive: false });
-
-  window.addEventListener('mousedown', (e) => {
+  // 게임 조작 (전체 화면 클릭/터치)
+  window.addEventListener('pointerdown', function(e) {
     if (gameState === 'playing') {
       flap();
     }
   });
 
-  window.addEventListener('keydown', (e) => {
+  window.addEventListener('keydown', function(e) {
     if (e.code === 'Space') flap();
   });
 

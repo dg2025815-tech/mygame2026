@@ -47,6 +47,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 10;
+  }
+
+  /* UI 화면이 숨겨지면 클릭/터치가 게임 캔버스로 통과되도록 설정 */
+  #uiOverlay.game-active {
     pointer-events: none;
   }
 
@@ -57,7 +62,7 @@
     pointer-events: auto;
     text-align: center;
     color: white;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.6);
     padding: 25px 20px;
     border-radius: 20px;
     backdrop-filter: blur(4px);
@@ -107,6 +112,7 @@
     background: transparent;
     box-shadow: none;
     margin: 0 auto;
+    pointer-events: none;
   }
 
   .char-name {
@@ -114,18 +120,20 @@
     font-size: 0.8rem;
     font-weight: bold;
     margin-top: 4px;
+    pointer-events: none;
   }
 
   button {
     background: #ff6b6b;
     color: white;
     border: none;
-    padding: 12px 30px;
-    font-size: 1.1rem;
+    padding: 14px 32px;
+    font-size: 1.2rem;
     font-weight: bold;
     border-radius: 30px;
     box-shadow: 0 4px 0 #d64545;
     cursor: pointer;
+    margin-top: 10px;
   }
 
   button:active {
@@ -135,7 +143,7 @@
 
   #scoreDisplay {
     position: absolute;
-    top: 10%;
+    top: 8%;
     left: 50%;
     transform: translateX(-50%);
     font-size: 3rem;
@@ -144,6 +152,7 @@
     text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
     display: none;
     pointer-events: none;
+    z-index: 5;
   }
 
   .guide {
@@ -165,8 +174,8 @@
       <h1>Flappy Friends</h1>
       <h2>캐릭터를 선택하세요</h2>
       <div class="char-select" id="charSelect"></div>
-      <button id="startBtn">게임 시작</button>
-      <p class="guide">📱 화면 아무 데나 터치해서 점프!</p>
+      <button id="startBtn" type="button">게임 시작</button>
+      <p class="guide">📱 시작 후 화면을 터치해 점프!</p>
     </div>
 
     <!-- 게임오버 화면 -->
@@ -174,7 +183,7 @@
       <h1>게임 오버!</h1>
       <h2 id="finalScore" style="margin-bottom: 5px;">점수: 0</h2>
       <h2 id="bestScore" style="margin-bottom: 15px; color: #ffd700;">최고 점수: 0</h2>
-      <button id="retryBtn">다시 하기</button>
+      <button id="retryBtn" type="button">다시 하기</button>
     </div>
   </div>
 </div>
@@ -184,8 +193,8 @@ window.addEventListener('load', function() {
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   const scoreDisplay = document.getElementById('scoreDisplay');
+  const uiOverlay = document.getElementById('uiOverlay');
 
-  // 반응형 크기 조절 (모바일 화면에 맞춰 2:3 비율 유지)
   function resizeCanvas() {
     let w = window.innerWidth;
     let h = window.innerHeight;
@@ -200,7 +209,6 @@ window.addEventListener('load', function() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
-  // 캐릭터 설정 (병아리, 문어, 드래곤)
   const characters = [
     { name: '병아리', body: '#FFD93D', wing: '#FFA500', accent: '#FF6B6B', type: 'chick' },
     { name: '문어', body: '#FF6B9D', wing: '#C44569', accent: '#FFFFFF', type: 'octopus' },
@@ -208,7 +216,6 @@ window.addEventListener('load', function() {
   ];
   let selectedCharIndex = 0;
 
-  // 캐릭터 그리기 루틴
   function drawBird(context, x, y, rotation, charData, isPreview) {
     context.save();
     context.translate(x, y);
@@ -289,7 +296,6 @@ window.addEventListener('load', function() {
     context.restore();
   }
 
-  // 캐릭터 선택 카드 생성
   const charSelectDiv = document.getElementById('charSelect');
   characters.forEach((char, index) => {
     const card = document.createElement('div');
@@ -306,22 +312,24 @@ window.addEventListener('load', function() {
     card.appendChild(pCanvas);
     card.appendChild(name);
     
-    card.addEventListener('click', (e) => {
+    function selectCard(e) {
       e.stopPropagation();
       document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       selectedCharIndex = index;
-    });
+    }
+
+    card.addEventListener('click', selectCard);
+    card.addEventListener('touchstart', selectCard);
 
     charSelectDiv.appendChild(card);
     drawBird(pCanvas.getContext('2d'), 25, 25, 0, char, true);
   });
 
-  // 게임 변수
-  let gameState = 'start';
+  let gameState = 'start'; 
   let bird, pipes, score, bestScore, frameCount;
 
-  bestScore = parseInt(localStorage.getItem('flappyBest_v2')) || 0;
+  bestScore = parseInt(localStorage.getItem('flappyBest_v3')) || 0;
 
   function initGame() {
     bird = {
@@ -430,6 +438,8 @@ window.addEventListener('load', function() {
   function startGame() {
     document.getElementById('startScreen').classList.remove('active');
     document.getElementById('gameOverScreen').classList.remove('active');
+    uiOverlay.classList.add('game-active');
+    
     scoreDisplay.style.display = 'block';
     scoreDisplay.textContent = '0';
 
@@ -439,11 +449,12 @@ window.addEventListener('load', function() {
 
   function endGame() {
     gameState = 'gameover';
+    uiOverlay.classList.remove('game-active');
     scoreDisplay.style.display = 'none';
 
     if (score > bestScore) {
       bestScore = score;
-      localStorage.setItem('flappyBest_v2', bestScore);
+      localStorage.setItem('flappyBest_v3', bestScore);
     }
 
     document.getElementById('finalScore').textContent = `점수: ${score}`;
@@ -451,29 +462,39 @@ window.addEventListener('load', function() {
     document.getElementById('gameOverScreen').classList.add('active');
   }
 
-  // 이벤트 조작
-  document.getElementById('startBtn').addEventListener('click', (e) => {
+  // 시작 & 리트라이 버튼 이벤트
+  const startBtn = document.getElementById('startBtn');
+  const retryBtn = document.getElementById('retryBtn');
+
+  function handleStart(e) {
+    e.preventDefault();
     e.stopPropagation();
     startGame();
-  });
+  }
 
-  document.getElementById('retryBtn').addEventListener('click', (e) => {
+  startBtn.addEventListener('click', handleStart);
+  startBtn.addEventListener('touchstart', handleStart);
+
+  function handleRetry(e) {
+    e.preventDefault();
     e.stopPropagation();
     document.getElementById('gameOverScreen').classList.remove('active');
     document.getElementById('startScreen').classList.add('active');
-  });
+  }
 
+  retryBtn.addEventListener('click', handleRetry);
+  retryBtn.addEventListener('touchstart', handleRetry);
+
+  // 게임 중 터치/클릭으로 점프
   window.addEventListener('touchstart', (e) => {
-    if (e.target.tagName !== 'BUTTON' && !e.target.closest('.char-card')) {
-      if (gameState === 'playing') {
-        e.preventDefault();
-        flap();
-      }
+    if (gameState === 'playing') {
+      e.preventDefault();
+      flap();
     }
   }, { passive: false });
 
   window.addEventListener('mousedown', (e) => {
-    if (e.target.tagName !== 'BUTTON' && !e.target.closest('.char-card')) {
+    if (gameState === 'playing') {
       flap();
     }
   });

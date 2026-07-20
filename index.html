@@ -2,32 +2,43 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Flappy Friends</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flappy Friends 🐦</title>
 <style>
   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
-  body {
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
     background-color: #70c5ce;
+    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    touch-action: none;
+  }
+
+  #gameContainer {
+    position: relative;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    font-family: sans-serif;
   }
 
-  #gameCanvas {
-    background-color: #70c5ce;
+  canvas {
     display: block;
+    background: linear-gradient(180deg, #70c5ce 0%, #a8e0e6 70%, #ded895 100%);
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
   }
 
-  #overlay {
+  #uiOverlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -39,531 +50,454 @@
     pointer-events: none;
   }
 
-  .panel {
+  .screen {
     display: none;
     flex-direction: column;
     align-items: center;
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 20px;
-    border-radius: 15px;
     pointer-events: auto;
-    color: white;
     text-align: center;
+    color: white;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 25px 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+    width: 85%;
+    max-width: 320px;
   }
 
-  .panel.show {
+  .screen.active {
     display: flex;
   }
 
   h1 {
-    font-size: 24px;
-    margin-bottom: 15px;
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 0px #ff6b6b;
   }
 
   h2 {
-    font-size: 16px;
-    margin-bottom: 10px;
-  }
-
-  .charRow {
-    display: flex;
-    gap: 8px;
+    font-size: 1.1rem;
     margin-bottom: 15px;
+    font-weight: normal;
   }
 
-  .charBox {
-    background-color: white;
+  .char-select {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .char-card {
+    background: rgba(255, 255, 255, 0.9);
     border: 3px solid transparent;
-    border-radius: 10px;
-    padding: 5px;
+    border-radius: 12px;
+    padding: 8px;
     cursor: pointer;
+    width: 75px;
+    transition: transform 0.15s;
   }
 
-  .charBox.picked {
-    border-color: gold;
+  .char-card.selected {
+    border-color: #ffd700;
+    transform: scale(1.08);
+    background: #ffffff;
   }
 
-  .charLabel {
-    color: black;
-    font-size: 11px;
-    margin-top: 3px;
+  .char-card canvas {
+    background: transparent;
+    box-shadow: none;
+    margin: 0 auto;
+  }
+
+  .char-name {
+    color: #333;
+    font-size: 0.8rem;
+    font-weight: bold;
+    margin-top: 4px;
   }
 
   button {
-    background-color: #ff6b6b;
+    background: #ff6b6b;
     color: white;
     border: none;
     padding: 12px 30px;
-    font-size: 16px;
-    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 30px;
+    box-shadow: 0 4px 0 #d64545;
     cursor: pointer;
   }
 
-  #scoreBox {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 40px;
-    color: white;
-    font-weight: bold;
-    display: none;
+  button:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 #d64545;
   }
 
-  p {
-    font-size: 12px;
-    margin-top: 10px;
+  #scoreDisplay {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 3rem;
+    color: white;
+    font-weight: bold;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
+    display: none;
+    pointer-events: none;
+  }
+
+  .guide {
+    font-size: 0.8rem;
+    margin-top: 12px;
+    opacity: 0.8;
   }
 </style>
 </head>
 <body>
 
-<canvas id="gameCanvas" width="360" height="600"></canvas>
-<div id="scoreBox">0</div>
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+  <div id="scoreDisplay">0</div>
 
-<div id="overlay">
-  <div class="panel show" id="startPanel">
-    <h1>Flappy Friends</h1>
-    <h2>캐릭터를 선택하세요</h2>
-    <div class="charRow" id="charRow"></div>
-    <button id="startButton">게임 시작</button>
-    <p>화면을 터치해서 날아오르세요</p>
-  </div>
+  <div id="uiOverlay">
+    <!-- 시작 화면 -->
+    <div class="screen active" id="startScreen">
+      <h1>Flappy Friends</h1>
+      <h2>캐릭터를 선택하세요</h2>
+      <div class="char-select" id="charSelect"></div>
+      <button id="startBtn">게임 시작</button>
+      <p class="guide">📱 화면 아무 데나 터치해서 점프!</p>
+    </div>
 
-  <div class="panel" id="overPanel">
-    <h1>게임 오버</h1>
-    <h2 id="scoreText">점수: 0</h2>
-    <h2 id="bestText">최고 점수: 0</h2>
-    <button id="retryButton">다시 하기</button>
+    <!-- 게임오버 화면 -->
+    <div class="screen" id="gameOverScreen">
+      <h1>게임 오버!</h1>
+      <h2 id="finalScore" style="margin-bottom: 5px;">점수: 0</h2>
+      <h2 id="bestScore" style="margin-bottom: 15px; color: #ffd700;">최고 점수: 0</h2>
+      <button id="retryBtn">다시 하기</button>
+    </div>
   </div>
 </div>
 
 <script>
+window.addEventListener('load', function() {
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreDisplay = document.getElementById('scoreDisplay');
 
-// ===============================
-// 캔버스 기본 설정
-// ===============================
-var canvas = document.getElementById("gameCanvas");
-var ctx = canvas.getContext("2d");
-
-function fitCanvas() {
-  var w = window.innerWidth;
-  var h = window.innerHeight;
-  var ratio = 360 / 600;
-
-  var newW = w;
-  var newH = w / ratio;
-
-  if (newH > h) {
-    newH = h;
-    newW = h * ratio;
-  }
-
-  canvas.style.width = newW + "px";
-  canvas.style.height = newH + "px";
-}
-fitCanvas();
-window.addEventListener("resize", fitCanvas);
-
-var GAME_W = canvas.width;
-var GAME_H = canvas.height;
-var GROUND_H = 80;
-
-// ===============================
-// 캐릭터 3종류 정의
-// ===============================
-var CHAR_LIST = [
-  { name: "병아리", bodyColor: "#FFD93D", wingColor: "#FFA500", beakColor: "#FF6B6B" },
-  { name: "문어", bodyColor: "#FF6B9D", wingColor: "#C44569", beakColor: "#FFFFFF" },
-  { name: "드래곤", bodyColor: "#6BCB77", wingColor: "#4D96FF", beakColor: "#FFD93D" }
-];
-
-var pickedChar = 0;
-
-// ===============================
-// 캐릭터 그리기 함수 (모두 같은 기본 모양 + 색깔로 차별화)
-// ===============================
-function paintBird(context, cx, cy, angle, charInfo, isPreview) {
-  context.save();
-  context.translate(cx, cy);
-  if (!isPreview) {
-    context.rotate(angle);
-  }
-
-  var r = 16;
-
-  // 몸통
-  context.fillStyle = charInfo.bodyColor;
-  context.beginPath();
-  context.arc(0, 0, r, 0, Math.PI * 2);
-  context.fill();
-
-  // 날개
-  context.fillStyle = charInfo.wingColor;
-  context.beginPath();
-  context.ellipse(-r * 0.3, r * 0.2, r * 0.6, r * 0.4, -0.4, 0, Math.PI * 2);
-  context.fill();
-
-  // 눈 (흰 배경 + 검은 눈동자)
-  context.fillStyle = "#FFFFFF";
-  context.beginPath();
-  context.arc(r * 0.35, -r * 0.2, r * 0.32, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = "#333333";
-  context.beginPath();
-  context.arc(r * 0.42, -r * 0.2, r * 0.15, 0, Math.PI * 2);
-  context.fill();
-
-  // 부리
-  context.fillStyle = charInfo.beakColor;
-  context.beginPath();
-  context.moveTo(r * 0.7, 0);
-  context.lineTo(r * 1.3, r * 0.15);
-  context.lineTo(r * 0.7, r * 0.3);
-  context.closePath();
-  context.fill();
-
-  // 볼터치
-  context.fillStyle = "rgba(255,150,150,0.5)";
-  context.beginPath();
-  context.arc(0, r * 0.3, r * 0.18, 0, Math.PI * 2);
-  context.fill();
-
-  context.restore();
-}
-
-// ===============================
-// 캐릭터 선택 화면 만들기
-// ===============================
-var charRowEl = document.getElementById("charRow");
-
-for (var i = 0; i < CHAR_LIST.length; i++) {
-  (function(index) {
-    var box = document.createElement("div");
-    box.className = "charBox";
-    if (index === 0) {
-      box.className += " picked";
+  // 반응형 크기 조절 (모바일 화면에 맞춰 2:3 비율 유지)
+  function resizeCanvas() {
+    let w = window.innerWidth;
+    let h = window.innerHeight;
+    if (w / h > 2/3) {
+      w = h * (2/3);
+    } else {
+      h = w * (3/2);
     }
+    canvas.width = w;
+    canvas.height = h;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
 
-    var miniCanvas = document.createElement("canvas");
-    miniCanvas.width = 50;
-    miniCanvas.height = 50;
+  // 캐릭터 설정 (병아리, 문어, 드래곤)
+  const characters = [
+    { name: '병아리', body: '#FFD93D', wing: '#FFA500', accent: '#FF6B6B', type: 'chick' },
+    { name: '문어', body: '#FF6B9D', wing: '#C44569', accent: '#FFFFFF', type: 'octopus' },
+    { name: '드래곤', body: '#6BCB77', wing: '#4D96FF', accent: '#FFD93D', type: 'dragon' }
+  ];
+  let selectedCharIndex = 0;
 
-    var label = document.createElement("div");
-    label.className = "charLabel";
-    label.textContent = CHAR_LIST[index].name;
+  // 캐릭터 그리기 루틴
+  function drawBird(context, x, y, rotation, charData, isPreview) {
+    context.save();
+    context.translate(x, y);
+    if (!isPreview) context.rotate(rotation);
+    
+    const size = isPreview ? 18 : canvas.width * 0.045;
 
-    box.appendChild(miniCanvas);
-    box.appendChild(label);
-    charRowEl.appendChild(box);
+    if (charData.type === 'chick') {
+      context.fillStyle = charData.body;
+      context.beginPath();
+      context.ellipse(0, 0, size, size * 0.85, 0, 0, Math.PI * 2);
+      context.fill();
 
-    var miniCtx = miniCanvas.getContext("2d");
-    paintBird(miniCtx, 25, 25, 0, CHAR_LIST[index], true);
+      context.fillStyle = charData.wing;
+      context.beginPath();
+      context.ellipse(-size*0.3, size*0.1, size*0.5, size*0.35, -0.3, 0, Math.PI * 2);
+      context.fill();
 
-    box.addEventListener("click", function() {
-      var allBoxes = document.querySelectorAll(".charBox");
-      for (var k = 0; k < allBoxes.length; k++) {
-        allBoxes[k].classList.remove("picked");
+      context.fillStyle = '#333';
+      context.beginPath();
+      context.arc(size*0.35, -size*0.15, size*0.15, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = charData.accent;
+      context.beginPath();
+      context.moveTo(size*0.7, 0);
+      context.lineTo(size*1.15, size*0.08);
+      context.lineTo(size*0.7, size*0.25);
+      context.closePath();
+      context.fill();
+    } 
+    else if (charData.type === 'octopus') {
+      context.fillStyle = charData.body;
+      context.beginPath();
+      context.arc(0, -size*0.1, size*0.85, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = charData.wing;
+      for (let i = -2; i <= 2; i++) {
+        context.beginPath();
+        context.arc(i * size*0.3, size*0.5, size*0.22, 0, Math.PI * 2);
+        context.fill();
       }
-      box.classList.add("picked");
-      pickedChar = index;
+
+      context.fillStyle = '#333';
+      context.beginPath();
+      context.arc(-size*0.2, -size*0.15, size*0.12, 0, Math.PI * 2);
+      context.arc(size*0.2, -size*0.15, size*0.12, 0, Math.PI * 2);
+      context.fill();
+    } 
+    else if (charData.type === 'dragon') {
+      context.fillStyle = charData.body;
+      context.beginPath();
+      context.ellipse(0, 0, size, size * 0.85, 0, 0, Math.PI * 2);
+      context.fill();
+
+      context.fillStyle = charData.wing;
+      context.beginPath();
+      context.moveTo(-size*0.2, -size*0.1);
+      context.lineTo(-size*0.9, -size*0.6);
+      context.lineTo(-size*0.4, size*0.3);
+      context.closePath();
+      context.fill();
+
+      context.fillStyle = charData.accent;
+      context.beginPath();
+      context.moveTo(-size*0.2, -size*0.7);
+      context.lineTo(-size*0.1, -size*1.1);
+      context.lineTo(size*0.1, -size*0.7);
+      context.closePath();
+      context.fill();
+
+      context.fillStyle = '#333';
+      context.beginPath();
+      context.arc(size*0.35, -size*0.15, size*0.15, 0, Math.PI * 2);
+      context.fill();
+    }
+    context.restore();
+  }
+
+  // 캐릭터 선택 카드 생성
+  const charSelectDiv = document.getElementById('charSelect');
+  characters.forEach((char, index) => {
+    const card = document.createElement('div');
+    card.className = 'char-card' + (index === 0 ? ' selected' : '');
+    
+    const pCanvas = document.createElement('canvas');
+    pCanvas.width = 50;
+    pCanvas.height = 50;
+    
+    const name = document.createElement('div');
+    name.className = 'char-name';
+    name.textContent = char.name;
+
+    card.appendChild(pCanvas);
+    card.appendChild(name);
+    
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedCharIndex = index;
     });
-  })(i);
-}
 
-// ===============================
-// 게임 상태 변수
-// ===============================
-var GRAVITY = 0.4;
-var JUMP_POWER = -7.5;
-var PIPE_GAP = 150;
-var PIPE_WIDTH = 55;
-var PIPE_SPACING = 90;
-var PIPE_SPEED = 2.2;
-
-var gameRunning = false;
-var birdX, birdY, birdVY, birdAngle;
-var pipeList = [];
-var currentScore = 0;
-var bestScore = 0;
-var frameNum = 0;
-var groundX = 0;
-
-// 로컬스토리지 최고점수 불러오기 (오류 방지 처리)
-function loadBestScore() {
-  try {
-    var saved = localStorage.getItem("flappyBestScore");
-    if (saved !== null) {
-      bestScore = parseInt(saved, 10);
-      if (isNaN(bestScore)) {
-        bestScore = 0;
-      }
-    }
-  } catch (err) {
-    bestScore = 0;
-  }
-}
-loadBestScore();
-
-function saveBestScore() {
-  try {
-    localStorage.setItem("flappyBestScore", String(bestScore));
-  } catch (err) {
-    // 저장 실패 시 무시하고 진행
-  }
-}
-
-// ===============================
-// 게임 초기화
-// ===============================
-function resetGame() {
-  birdX = GAME_W * 0.3;
-  birdY = GAME_H * 0.5;
-  birdVY = 0;
-  birdAngle = 0;
-  pipeList = [];
-  currentScore = 0;
-  frameNum = 0;
-}
-
-// ===============================
-// 파이프 생성
-// ===============================
-function spawnPipe() {
-  var minTop = 40;
-  var maxTop = GAME_H - GROUND_H - PIPE_GAP - 40;
-  if (maxTop < minTop) {
-    maxTop = minTop + 20;
-  }
-  var topH = minTop + Math.random() * (maxTop - minTop);
-
-  pipeList.push({
-    x: GAME_W,
-    topHeight: topH,
-    bottomY: topH + PIPE_GAP,
-    passed: false
+    charSelectDiv.appendChild(card);
+    drawBird(pCanvas.getContext('2d'), 25, 25, 0, char, true);
   });
-}
 
-// ===============================
-// 충돌 검사
-// ===============================
-function isColliding() {
-  var birdR = 15;
+  // 게임 물리/상태 변수
+  let gameState = 'start'; // 'start', 'playing', 'gameover'
+  let bird, pipes, score, bestScore, frameCount;
 
-  if (birdY - birdR < 0) {
-    return true;
+  bestScore = parseInt(localStorage.getItem('flappyBest_v2')) || 0;
+
+  function initGame() {
+    bird = {
+      x: canvas.width * 0.28,
+      y: canvas.height * 0.4,
+      velocity: 0,
+      rotation: 0
+    };
+    pipes = [];
+    score = 0;
+    frameCount = 0;
   }
-  if (birdY + birdR > GAME_H - GROUND_H) {
-    return true;
+
+  function flap() {
+    if (gameState === 'playing') {
+      bird.velocity = -canvas.height * 0.012; // 점프 세기
+    }
   }
 
-  for (var i = 0; i < pipeList.length; i++) {
-    var p = pipeList[i];
-    var inXRange = (birdX + birdR > p.x) && (birdX - birdR < p.x + PIPE_WIDTH);
-    if (inXRange) {
-      var hitTop = birdY - birdR < p.topHeight;
-      var hitBottom = birdY + birdR > p.bottomY;
-      if (hitTop || hitBottom) {
-        return true;
+  function createPipe() {
+    const pipeGap = canvas.height * 0.26; // 파이프 사이 간격
+    const minH = canvas.height * 0.1;
+    const maxH = canvas.height - pipeGap - (canvas.height * 0.15);
+    const topH = minH + Math.random() * (maxH - minH);
+
+    pipes.push({
+      x: canvas.width,
+      width: canvas.width * 0.14,
+      topHeight: topH,
+      bottomY: topH + pipeGap,
+      passed: false
+    });
+  }
+
+  function update() {
+    if (gameState !== 'playing') return;
+
+    frameCount++;
+
+    // 새 물리 엔진
+    bird.velocity += canvas.height * 0.00065; // 중력
+    bird.y += bird.velocity;
+    bird.rotation = Math.min(Math.max(bird.velocity * 0.05, -0.4), 0.8);
+
+    // 파이프 생성
+    if (frameCount % 90 === 0) {
+      createPipe();
+    }
+
+    // 파이프 이동 및 충돌 체크
+    const groundY = canvas.height - (canvas.height * 0.1);
+    const birdR = canvas.width * 0.04;
+
+    // 바닥/천장 충돌
+    if (bird.y + birdR >= groundY || bird.y - birdR <= 0) {
+      endGame();
+    }
+
+    for (let i = 0; i < pipes.length; i++) {
+      let p = pipes[i];
+      p.x -= canvas.width * 0.006; // 파이프 이동 속도
+
+      // 점수 획득
+      if (!p.passed && p.x + p.width < bird.x) {
+        p.passed = true;
+        score++;
+        scoreDisplay.textContent = score;
+      }
+
+      // 파이프 충돌
+      if (bird.x + birdR > p.x && bird.x - birdR < p.x + p.width) {
+        if (bird.y - birdR < p.topHeight || bird.y + birdR > p.bottomY) {
+          endGame();
+        }
       }
     }
+
+    // 화면 밖으로 나간 파이프 정렬
+    pipes = pipes.filter(p => p.x > -p.width);
   }
 
-  return false;
-}
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// ===============================
-// 업데이트 로직
-// ===============================
-function updateGame() {
-  if (!gameRunning) {
-    return;
-  }
+    const groundY = canvas.height - (canvas.height * 0.1);
 
-  frameNum++;
+    // 파이프 그리기
+    pipes.forEach(p => {
+      ctx.fillStyle = '#5cb85c';
+      ctx.fillRect(p.x, 0, p.width, p.topHeight);
+      ctx.fillRect(p.x, p.bottomY, p.width, groundY - p.bottomY);
 
-  birdVY += GRAVITY;
-  birdY += birdVY;
+      // 파이프 캡
+      ctx.fillStyle = '#4a934a';
+      ctx.fillRect(p.x - 3, p.topHeight - 15, p.width + 6, 15);
+      ctx.fillRect(p.x - 3, p.bottomY, p.width + 6, 15);
+    });
 
-  birdAngle = birdVY * 0.04;
-  if (birdAngle > 1.0) birdAngle = 1.0;
-  if (birdAngle < -0.5) birdAngle = -0.5;
+    // 바닥 그리기
+    ctx.fillStyle = '#ded895';
+    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+    ctx.fillStyle = '#c9b968';
+    ctx.fillRect(0, groundY, canvas.width, 10);
 
-  groundX -= PIPE_SPEED;
-
-  if (frameNum % PIPE_SPACING === 0) {
-    spawnPipe();
-  }
-
-  for (var i = 0; i < pipeList.length; i++) {
-    pipeList[i].x -= PIPE_SPEED;
-
-    if (!pipeList[i].passed && pipeList[i].x + PIPE_WIDTH < birdX) {
-      pipeList[i].passed = true;
-      currentScore++;
-      document.getElementById("scoreBox").textContent = String(currentScore);
+    // 새 그리기
+    if (gameState === 'playing') {
+      drawBird(ctx, bird.x, bird.y, bird.rotation, characters[selectedCharIndex], false);
     }
   }
 
-  var keepPipes = [];
-  for (var j = 0; j < pipeList.length; j++) {
-    if (pipeList[j].x > -PIPE_WIDTH) {
-      keepPipes.push(pipeList[j]);
+  function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function startGame() {
+    document.getElementById('startScreen').classList.remove('active');
+    document.getElementById('gameOverScreen').classList.remove('active');
+    scoreDisplay.style.display = 'block';
+    scoreDisplay.textContent = '0';
+
+    initGame();
+    gameState = 'playing';
+  }
+
+  function endGame() {
+    gameState = 'gameover';
+    scoreDisplay.style.display = 'none';
+
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('flappyBest_v2', bestScore);
     }
-  }
-  pipeList = keepPipes;
 
-  if (isColliding()) {
-    stopGame();
-  }
-}
-
-// ===============================
-// 그리기 로직
-// ===============================
-function drawBackground() {
-  ctx.fillStyle = "#70c5ce";
-  ctx.fillRect(0, 0, GAME_W, GAME_H);
-}
-
-function drawPipes() {
-  for (var i = 0; i < pipeList.length; i++) {
-    var p = pipeList[i];
-
-    ctx.fillStyle = "#5cb85c";
-    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
-
-    ctx.fillStyle = "#4a934a";
-    ctx.fillRect(p.x - 4, p.topHeight - 15, PIPE_WIDTH + 8, 15);
-
-    var bottomH = GAME_H - GROUND_H - p.bottomY;
-    ctx.fillStyle = "#5cb85c";
-    ctx.fillRect(p.x, p.bottomY, PIPE_WIDTH, bottomH);
-
-    ctx.fillStyle = "#4a934a";
-    ctx.fillRect(p.x - 4, p.bottomY, PIPE_WIDTH + 8, 15);
-  }
-}
-
-function drawGround() {
-  var groundY = GAME_H - GROUND_H;
-  ctx.fillStyle = "#ded895";
-  ctx.fillRect(0, groundY, GAME_W, GROUND_H);
-
-  ctx.fillStyle = "#c9b968";
-  ctx.fillRect(0, groundY, GAME_W, 10);
-}
-
-function drawScoreOnCanvas() {
-  // 캔버스 내부에도 점수를 표시하지 않음 (HTML 요소로 대체)
-}
-
-function renderGame() {
-  drawBackground();
-  drawPipes();
-  drawGround();
-
-  if (gameRunning) {
-    paintBird(ctx, birdX, birdY, birdAngle, CHAR_LIST[pickedChar], false);
-  }
-}
-
-// ===============================
-// 게임 루프
-// ===============================
-function gameLoop() {
-  updateGame();
-  renderGame();
-  requestAnimationFrame(gameLoop);
-}
-
-// ===============================
-// 화면 전환 함수
-// ===============================
-function showPanel(panelId) {
-  var allPanels = document.querySelectorAll(".panel");
-  for (var i = 0; i < allPanels.length; i++) {
-    allPanels[i].classList.remove("show");
-  }
-  document.getElementById(panelId).classList.add("show");
-}
-
-// ===============================
-// 게임 시작
-// ===============================
-function startGame() {
-  showPanel("");
-  document.getElementById("startPanel").classList.remove("show");
-  document.getElementById("overPanel").classList.remove("show");
-
-  document.getElementById("scoreBox").style.display = "block";
-  document.getElementById("scoreBox").textContent = "0";
-
-  resetGame();
-  gameRunning = true;
-}
-
-// ===============================
-// 게임 종료
-// ===============================
-function stopGame() {
-  gameRunning = false;
-  document.getElementById("scoreBox").style.display = "none";
-
-  if (currentScore > bestScore) {
-    bestScore = currentScore;
-    saveBestScore();
+    document.getElementById('finalScore').textContent = `점수: ${score}`;
+    document.getElementById('bestScore').textContent = `최고 점수: ${bestScore}`;
+    document.getElementById('gameOverScreen').classList.add('active');
   }
 
-  document.getElementById("scoreText").textContent = "점수: " + currentScore;
-  document.getElementById("bestText").textContent = "최고 점수: " + bestScore;
+  // 이벤트 조작 (터치 & 버튼 입력 처리)
+  document.getElementById('startBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    startGame();
+  });
 
-  showPanel("overPanel");
-}
+  document.getElementById('retryBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    document.getElementById('gameOverScreen').classList.remove('active');
+    document.getElementById('startScreen').classList.add('active');
+  });
 
-// ===============================
-// 점프 동작
-// ===============================
-function doJump() {
-  if (gameRunning) {
-    birdVY = JUMP_POWER;
-  }
-}
+  // 터치 및 터치-스크롤 방지 이벤트
+  window.addEventListener('touchstart', (e) => {
+    if (e.target.tagName !== 'BUTTON' && !e.target.closest('.char-card')) {
+      if (gameState === 'playing') {
+        e.preventDefault();
+        flap();
+      }
+    }
+  }, { passive: false });
 
-// ===============================
-// 버튼 이벤트 연결
-// ===============================
-document.getElementById("startButton").addEventListener("click", function(e) {
-  e.preventDefault();
-  startGame();
+  // PC 테스트용 클릭/스페이스바 지원
+  window.addEventListener('mousedown', (e) => {
+    if (e.target.tagName !== 'BUTTON' && !e.target.closest('.char-card')) {
+      flap();
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') flap();
+  });
+
+  // 게임 실행 시작
+  loop();
 });
-
-document.getElementById("retryButton").addEventListener("click", function(e) {
-  e.preventDefault();
-  document.getElementById("overPanel").classList.remove("show");
-  document.getElementById("startPanel").classList.add("show");
-});
-
-// ===============================
-// 터치 및 클릭 이벤트 (게임 캔버스에서만 작동)
-// ===============================
-canvas.addEventListener("touchstart", function(e) {
-  e.preventDefault();
-  doJump();
-}, { passive: false });
-
-canvas.addEventListener("mousedown", function(e) {
-  doJump();
-});
-
-// ===============================
-// 초기 실행
-// ===============================
-gameLoop();
-
 </script>
-
 </body>
 </html>

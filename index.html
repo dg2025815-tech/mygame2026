@@ -317,8 +317,8 @@ window.addEventListener('load', function() {
     drawBird(pCanvas.getContext('2d'), 25, 25, 0, char, true);
   });
 
-  // 게임 물리/상태 변수
-  let gameState = 'start'; // 'start', 'playing', 'gameover'
+  // 게임 변수
+  let gameState = 'start';
   let bird, pipes, score, bestScore, frameCount;
 
   bestScore = parseInt(localStorage.getItem('flappyBest_v2')) || 0;
@@ -337,12 +337,12 @@ window.addEventListener('load', function() {
 
   function flap() {
     if (gameState === 'playing') {
-      bird.velocity = -canvas.height * 0.012; // 점프 세기
+      bird.velocity = -canvas.height * 0.012;
     }
   }
 
   function createPipe() {
-    const pipeGap = canvas.height * 0.26; // 파이프 사이 간격
+    const pipeGap = canvas.height * 0.26;
     const minH = canvas.height * 0.1;
     const maxH = canvas.height - pipeGap - (canvas.height * 0.15);
     const topH = minH + Math.random() * (maxH - minH);
@@ -361,37 +361,31 @@ window.addEventListener('load', function() {
 
     frameCount++;
 
-    // 새 물리 엔진
-    bird.velocity += canvas.height * 0.00065; // 중력
+    bird.velocity += canvas.height * 0.00065;
     bird.y += bird.velocity;
     bird.rotation = Math.min(Math.max(bird.velocity * 0.05, -0.4), 0.8);
 
-    // 파이프 생성
     if (frameCount % 90 === 0) {
       createPipe();
     }
 
-    // 파이프 이동 및 충돌 체크
     const groundY = canvas.height - (canvas.height * 0.1);
     const birdR = canvas.width * 0.04;
 
-    // 바닥/천장 충돌
     if (bird.y + birdR >= groundY || bird.y - birdR <= 0) {
       endGame();
     }
 
     for (let i = 0; i < pipes.length; i++) {
       let p = pipes[i];
-      p.x -= canvas.width * 0.006; // 파이프 이동 속도
+      p.x -= canvas.width * 0.006;
 
-      // 점수 획득
       if (!p.passed && p.x + p.width < bird.x) {
         p.passed = true;
         score++;
         scoreDisplay.textContent = score;
       }
 
-      // 파이프 충돌
       if (bird.x + birdR > p.x && bird.x - birdR < p.x + p.width) {
         if (bird.y - birdR < p.topHeight || bird.y + birdR > p.bottomY) {
           endGame();
@@ -399,7 +393,6 @@ window.addEventListener('load', function() {
       }
     }
 
-    // 화면 밖으로 나간 파이프 정렬
     pipes = pipes.filter(p => p.x > -p.width);
   }
 
@@ -408,25 +401,21 @@ window.addEventListener('load', function() {
 
     const groundY = canvas.height - (canvas.height * 0.1);
 
-    // 파이프 그리기
     pipes.forEach(p => {
       ctx.fillStyle = '#5cb85c';
       ctx.fillRect(p.x, 0, p.width, p.topHeight);
       ctx.fillRect(p.x, p.bottomY, p.width, groundY - p.bottomY);
 
-      // 파이프 캡
       ctx.fillStyle = '#4a934a';
       ctx.fillRect(p.x - 3, p.topHeight - 15, p.width + 6, 15);
       ctx.fillRect(p.x - 3, p.bottomY, p.width + 6, 15);
     });
 
-    // 바닥 그리기
     ctx.fillStyle = '#ded895';
     ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
     ctx.fillStyle = '#c9b968';
     ctx.fillRect(0, groundY, canvas.width, 10);
 
-    // 새 그리기
     if (gameState === 'playing') {
       drawBird(ctx, bird.x, bird.y, bird.rotation, characters[selectedCharIndex], false);
     }
@@ -462,7 +451,7 @@ window.addEventListener('load', function() {
     document.getElementById('gameOverScreen').classList.add('active');
   }
 
-  // 이벤트 조작 (터치 & 버튼 입력 처리)
+  // 이벤트 조작
   document.getElementById('startBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     startGame();
@@ -474,7 +463,6 @@ window.addEventListener('load', function() {
     document.getElementById('startScreen').classList.add('active');
   });
 
-  // 터치 및 터치-스크롤 방지 이벤트
   window.addEventListener('touchstart', (e) => {
     if (e.target.tagName !== 'BUTTON' && !e.target.closest('.char-card')) {
       if (gameState === 'playing') {
@@ -484,7 +472,6 @@ window.addEventListener('load', function() {
     }
   }, { passive: false });
 
-  // PC 테스트용 클릭/스페이스바 지원
   window.addEventListener('mousedown', (e) => {
     if (e.target.tagName !== 'BUTTON' && !e.target.closest('.char-card')) {
       flap();
@@ -495,7 +482,6 @@ window.addEventListener('load', function() {
     if (e.code === 'Space') flap();
   });
 
-  // 게임 실행 시작
   loop();
 });
 </script>

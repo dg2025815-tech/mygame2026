@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI의 역사 - 인터랙티브 프레젠테이션 🤖</title>
+<title>AI의 역사 & 미래 - 인터랙티브 프레젠테이션 🤖</title>
 <!-- Chart.js 라이브러리 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
@@ -11,7 +11,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Pretendard', sans-serif;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
   }
 
   body {
@@ -29,12 +29,12 @@
   .slide-container {
     width: 90%;
     max-width: 950px;
-    height: 600px;
+    height: 620px;
     background: #1e293b;
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     border: 1px solid #334155;
-    padding: 40px;
+    padding: 35px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -43,7 +43,7 @@
 
   .slide {
     display: none;
-    height: 100%;
+    height: calc(100% - 60px);
     flex-direction: column;
   }
 
@@ -52,13 +52,13 @@
   }
 
   h2 {
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     color: #38bdf8;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 
   p.desc {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #94a3b8;
     margin-bottom: 20px;
     line-height: 1.5;
@@ -66,9 +66,10 @@
 
   .content-area {
     display: flex;
-    gap: 20px;
+    gap: 25px;
     flex: 1;
     align-items: center;
+    min-height: 0; /* flex 자식 overflow 방지 */
   }
 
   .controls {
@@ -83,8 +84,9 @@
   }
 
   .chart-area {
-    flex: 1.5;
+    flex: 1.4;
     height: 100%;
+    width: 100%;
     position: relative;
     display: flex;
     justify-content: center;
@@ -100,14 +102,16 @@
   input[type="range"] {
     width: 100%;
     cursor: pointer;
+    accent-color: #38bdf8;
   }
 
   .stat-box {
     background: #1e293b;
-    padding: 10px;
+    padding: 12px;
     border-radius: 8px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: #38bdf8;
+    font-weight: bold;
   }
 
   /* 내비게이션 바 */
@@ -115,7 +119,6 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
     padding-top: 15px;
     border-top: 1px solid #334155;
   }
@@ -124,8 +127,8 @@
     background: #0284c7;
     color: white;
     border: none;
-    padding: 10px 20px;
-    font-size: 1rem;
+    padding: 10px 24px;
+    font-size: 0.95rem;
     font-weight: bold;
     border-radius: 8px;
     cursor: pointer;
@@ -136,9 +139,16 @@
     background: #38bdf8;
   }
 
-  .page-indicator {
+  button.nav-btn:disabled {
+    background: #334155;
     color: #64748b;
+    cursor: not-allowed;
+  }
+
+  .page-indicator {
+    color: #94a3b8;
     font-weight: bold;
+    font-size: 0.95rem;
   }
 </style>
 </head>
@@ -146,16 +156,16 @@
 
 <div class="slide-container">
 
-  <!-- Slide 1: AI의 태동과 첫 번째 겨울 -->
+  <!-- Slide 1: AI 태동과 겨울 -->
   <div class="slide active" id="slide1">
-    <h2>1. AI의 탄생과 투자 패닉 (1950s ~ 1970s)</h2>
-    <p class="desc">슬라이더를 움직여 <b>연구 예산 지원 변화</b>에 따른 AI 기대치와 겨울(연구 침체기)의 도래를 확인해보세요.</p>
+    <h2>1. AI의 탄생과 첫 번째 겨울 (1950s ~ 1970s)</h2>
+    <p class="desc">슬라이더를 조작해 <b>정부 예산 지원금</b>에 따라 AI 발전 기대치와 겨울(침체기)이 어떻게 찾아오는지 확인해보세요.</p>
     <div class="content-area">
       <div class="controls">
-        <label for="fundingSlider">💰 정부/기업의 연구 지원금 ($M)</label>
+        <label for="fundingSlider">💰 연구 지원금 ($M)</label>
         <input type="range" id="fundingSlider" min="10" max="100" value="80">
-        <div class="stat-box" id="fundingText">기대 지수: 80% (상승기)</div>
-        <p style="font-size:0.85rem; color:#64748b;">* 지원금이 40 이하로 떨어지면 AI의 첫 번째 겨울이 찾아옵니다.</p>
+        <div class="stat-box" id="fundingText">기대 지수: 80% (상승기 🚀)</div>
+        <p style="font-size:0.8rem; color:#64748b;">* 지원금이 40 미치지 못하면 연구 한계로 AI 겨울이 찾아옵니다.</p>
       </div>
       <div class="chart-area">
         <canvas id="chart1"></canvas>
@@ -163,15 +173,15 @@
     </div>
   </div>
 
-  <!-- Slide 2: 딥러닝 혁명과 컴퓨팅 파워 -->
+  <!-- Slide 2: 딥러닝과 GPU -->
   <div class="slide" id="slide2">
-    <h2>2. 딥러닝과 GPU 시대 (2010s)</h2>
-    <p class="desc">컴퓨팅 파워(GPU 수)를 늘려보세요. **파라미터 수와 모델 성능이 폭발적으로 상승**합니다!</p>
+    <h2>2. 딥러닝과 GPU 혁명 (2010s)</h2>
+    <p class="desc">연산용 GPU 개수를 늘려보세요. **컴퓨팅 파워에 따라 AI의 인식 성능**이 폭발적으로 상승합니다!</p>
     <div class="content-area">
       <div class="controls">
         <label for="gpuSlider">⚡ 연산용 GPU 개수 (Scale)</label>
-        <input type="range" id="gpuSlider" min="1" max="100" value="10">
-        <div class="stat-box" id="gpuText">모델 정확도: 65%</div>
+        <input type="range" id="gpuSlider" min="1" max="100" value="20">
+        <div class="stat-box" id="gpuText">평균 AI 정확도: 65%</div>
       </div>
       <div class="chart-area">
         <canvas id="chart2"></canvas>
@@ -179,15 +189,15 @@
     </div>
   </div>
 
-  <!-- Slide 3: 생성형 AI와 미래 -->
+  <!-- Slide 3: 생성형 AI (수정됨) -->
   <div class="slide" id="slide3">
-    <h2>3. 생성형 AI와 미래 트렌드 (2020s ~ )</h2>
-    <p class="desc">사용자 유저 수를 조절해 보세요. 데이터량에 따라 AI가 생성해내는 파급력이 시뮬레이션됩니다.</p>
+    <h2>3. 생성형 AI와 파급력 (2020s ~ )</h2>
+    <p class="desc">글로벌 AI 사용자 수를 늘려보세요. **방사형 그래프가 펼쳐지며 분야별 파급력**이 확장됩니다!</p>
     <div class="content-area">
       <div class="controls">
-        <label for="userSlider">🌐 글로벌 AI 사용자 수 (백만 명)</label>
-        <input type="range" id="userSlider" min="1" max="500" value="100">
-        <div class="stat-box" id="userText">생성된 실시간 데이터: 100 TB</div>
+        <label for="userSlider">🌐 사용자 수 (백만 명)</label>
+        <input type="range" id="userSlider" min="10" max="500" value="150">
+        <div class="stat-box" id="userText">생성 데이터량: 2,250 TB</div>
       </div>
       <div class="chart-area">
         <canvas id="chart3"></canvas>
@@ -195,11 +205,43 @@
     </div>
   </div>
 
-  <!-- 내비게이션 컨트롤 -->
+  <!-- Slide 4: 모델 크기와 환각 현상 (신규) -->
+  <div class="slide" id="slide4">
+    <h2>4. AI 스케일링: 지식 능력 vs 환각 현상</h2>
+    <p class="desc">AI의 **파라미터(매개변수) 크기**를 키워보세요. 지식 수준은 올라가고, **거짓말을 하는 환각(Hallucination) 현상**은 줄어듭니다.</p>
+    <div class="content-area">
+      <div class="controls">
+        <label for="paramSlider">🧠 파라미터 크기 (Billion)</label>
+        <input type="range" id="paramSlider" min="1" max="100" value="10">
+        <div class="stat-box" id="paramText">모델 상태: 소형 언어 모델 (SLM)</div>
+      </div>
+      <div class="chart-area">
+        <canvas id="chart4"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide 5: AI와 미래의 일자리 (신규) -->
+  <div class="slide" id="slide5">
+    <h2>5. AI 시대의 일자리 변화 (대체 vs 협업)</h2>
+    <p class="desc">산업 내 **AI 도입률**을 올려보세요. 단순 대체되는 일자리와, 인간과 AI가 협업하는 미래 일자리의 비율이 변화합니다.</p>
+    <div class="content-area">
+      <div class="controls">
+        <label for="jobSlider">🤖 기업의 AI 도입률 (%)</label>
+        <input type="range" id="jobSlider" min="0" max="100" value="30">
+        <div class="stat-box" id="jobText">현재 단계: 초기 도입기</div>
+      </div>
+      <div class="chart-area">
+        <canvas id="chart5"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- 내비게이션 바 -->
   <div class="nav-bar">
-    <button class="nav-btn" onclick="prevSlide()">이전</button>
-    <span class="page-indicator" id="pageIndicator">1 / 3</span>
-    <button class="nav-btn" onclick="nextSlide()">다음</button>
+    <button class="nav-btn" id="prevBtn" onclick="prevSlide()">이전</button>
+    <span class="page-indicator" id="pageIndicator">1 / 5</span>
+    <button class="nav-btn" id="nextBtn" onclick="nextSlide()">다음</button>
   </div>
 
 </div>
@@ -208,20 +250,26 @@
   let currentSlide = 0;
   const slides = document.querySelectorAll('.slide');
   const pageIndicator = document.getElementById('pageIndicator');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
 
-  // Slide 1 Chart
+  // Chart.js 기본 스타일 글로벌 세팅
+  Chart.defaults.color = '#94a3b8';
+  Chart.defaults.borderColor = '#334155';
+
+  // --- Slide 1 Chart ---
   const ctx1 = document.getElementById('chart1').getContext('2d');
   const chart1 = new Chart(ctx1, {
     type: 'line',
     data: {
       labels: ['1950', '1960', '1970 (1차 겨울)', '1980', '1990 (2차 겨울)'],
       datasets: [{
-        label: 'AI 연구 대중적 기대치',
+        label: 'AI 기대치 (%)',
         data: [20, 80, 20, 70, 30],
         borderColor: '#38bdf8',
         backgroundColor: 'rgba(56, 189, 248, 0.2)',
         fill: true,
-        tension: 0.4
+        tension: 0.3
       }]
     },
     options: { responsive: true, maintainAspectRatio: false }
@@ -230,7 +278,7 @@
   document.getElementById('fundingSlider').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     chart1.data.datasets[0].data[1] = val;
-    chart1.data.datasets[0].data[2] = Math.max(10, val - 40);
+    chart1.data.datasets[0].data[2] = Math.max(10, val - 45);
     chart1.update();
 
     const fundingText = document.getElementById('fundingText');
@@ -238,12 +286,12 @@
       fundingText.innerText = `기대 지수: ${val}% (❄️ AI 겨울 진행 중)`;
       fundingText.style.color = '#f43f5e';
     } else {
-      fundingText.innerText = `기대 지수: ${val}% (🚀 AI 활성화 중)`;
+      fundingText.innerText = `기대 지수: ${val}% (상승기 🚀)`;
       fundingText.style.color = '#38bdf8';
     }
   });
 
-  // Slide 2 Chart
+  // --- Slide 2 Chart ---
   const ctx2 = document.getElementById('chart2').getContext('2d');
   const chart2 = new Chart(ctx2, {
     type: 'bar',
@@ -251,63 +299,139 @@
       labels: ['이미지 인식', '음성 인식', '자연어 처리'],
       datasets: [{
         label: 'AI 정확도 (%)',
-        data: [65, 50, 45],
+        data: [65, 52, 48],
         backgroundColor: ['#38bdf8', '#818cf8', '#c084fc']
       }]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { max: 100 } } }
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
   });
 
   document.getElementById('gpuSlider').addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
-    const accuracyImg = Math.min(99, 60 + val * 0.4);
-    const accuracyVoice = Math.min(98, 45 + val * 0.5);
-    const accuracyNlp = Math.min(96, 40 + val * 0.55);
+    const img = Math.min(99, 55 + val * 0.45);
+    const voice = Math.min(98, 45 + val * 0.5);
+    const nlp = Math.min(96, 40 + val * 0.55);
 
-    chart2.data.datasets[0].data = [accuracyImg, accuracyVoice, accuracyNlp];
+    chart2.data.datasets[0].data = [img, voice, nlp];
     chart2.update();
 
-    document.getElementById('gpuText').innerText = `평균 AI 성능 점수: ${Math.round((accuracyImg + accuracyVoice + accuracyNlp)/3)}%`;
+    document.getElementById('gpuText').innerText = `평균 AI 정확도: ${Math.round((img + voice + nlp)/3)}%`;
   });
 
-  // Slide 3 Chart
+  // --- Slide 3 Chart (수정완료: 선명하고 크게 보이도록 수정) ---
   const ctx3 = document.getElementById('chart3').getContext('2d');
-  const chart3 = new Chart(chart3, {
+  const chart3 = new Chart(ctx3, {
     type: 'radar',
     data: {
       labels: ['텍스트 생성', '이미지/영상', '코딩 작성', '데이터 분석', '음성 합성'],
       datasets: [{
-        label: '생성형 AI 파급력',
-        data: [20, 20, 20, 20, 20],
+        label: '분야별 파급력 Index',
+        data: [50, 45, 55, 40, 48],
         borderColor: '#a855f7',
-        backgroundColor: 'rgba(168, 85, 247, 0.2)'
+        backgroundColor: 'rgba(168, 85, 247, 0.4)',
+        borderWidth: 2,
+        pointBackgroundColor: '#a855f7'
       }]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { r: { max: 100 } } }
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false, 
+      scales: { 
+        r: { 
+          min: 0, 
+          max: 100,
+          ticks: { display: false },
+          angleLines: { color: '#334155' },
+          grid: { color: '#334155' }
+        } 
+      } 
+    }
   });
 
   document.getElementById('userSlider').addEventListener('input', (e) => {
     const users = parseInt(e.target.value);
-    const impact = Math.min(100, users * 0.2);
+    const base = Math.min(100, 20 + users * 0.16);
 
     chart3.data.datasets[0].data = [
-      impact, 
-      Math.min(100, impact * 0.9), 
-      Math.min(100, impact * 1.1), 
-      Math.min(100, impact * 0.8), 
-      Math.min(100, impact * 0.95)
+      Math.min(100, base * 1.1),
+      Math.min(100, base * 0.95),
+      Math.min(100, base * 1.2),
+      Math.min(100, base * 0.85),
+      Math.min(100, base * 1.0)
     ];
     chart3.update();
 
-    document.getElementById('userText').innerText = `생성된 실시간 데이터: ${users * 15} TB`;
+    document.getElementById('userText').innerText = `생성 데이터량: ${(users * 15).toLocaleString()} TB`;
   });
 
-  // Slide Navigation Logic
+  // --- Slide 4 Chart (신규: 파라미터 vs 환각) ---
+  const ctx4 = document.getElementById('chart4').getContext('2d');
+  const chart4 = new Chart(ctx4, {
+    type: 'bar',
+    data: {
+      labels: ['지식/이해력 점수', '환각(거짓말) 발생률'],
+      datasets: [{
+        label: '점수 (%)',
+        data: [40, 60],
+        backgroundColor: ['#22c55e', '#f43f5e']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 100 } } }
+  });
+
+  document.getElementById('paramSlider').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    const knowledge = Math.min(98, 30 + val * 0.7);
+    const hallucination = Math.max(5, 70 - val * 0.65);
+
+    chart4.data.datasets[0].data = [knowledge, hallucination];
+    chart4.update();
+
+    const paramText = document.getElementById('paramText');
+    if (val < 20) paramText.innerText = "모델 상태: 경량 언어 모델 (SLM)";
+    else if (val < 70) paramText.innerText = "모델 상태: 대형 언어 모델 (LLM)";
+    else paramText.innerText = "모델 상태: 초거대 AI (Frontier Model)";
+  });
+
+  // --- Slide 5 Chart (신규: 일자리 도넛 차트) ---
+  const ctx5 = document.getElementById('chart5').getContext('2d');
+  const chart5 = new Chart(ctx5, {
+    type: 'doughnut',
+    data: {
+      labels: ['인간 고유 영역', 'AI와 협업 영역', 'AI 자동 대체 영역'],
+      datasets: [{
+        data: [60, 25, 15],
+        backgroundColor: ['#38bdf8', '#a855f7', '#f43f5e']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  document.getElementById('jobSlider').addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    
+    const replaced = Math.min(45, 10 + val * 0.35);
+    const coop = Math.min(50, 15 + val * 0.35);
+    const humanOnly = 100 - replaced - coop;
+
+    chart5.data.datasets[0].data = [humanOnly, coop, replaced];
+    chart5.update();
+
+    const jobText = document.getElementById('jobText');
+    if (val < 30) jobText.innerText = "단계: 초기 도입 단계";
+    else if (val < 70) jobText.innerText = "단계: AI 협업 일상화 단계 🤝";
+    else jobText.innerText = "단계: 고도화된 자동화 단계 ⚡";
+  });
+
+  // 슬라이드 내비게이션
   function updateSlide() {
     slides.forEach((slide, index) => {
       slide.classList.toggle('active', index === currentSlide);
     });
     pageIndicator.innerText = `${currentSlide + 1} / ${slides.length}`;
+    
+    prevBtn.disabled = (currentSlide === 0);
+    nextBtn.disabled = (currentSlide === slides.length - 1);
   }
 
   function nextSlide() {
@@ -323,6 +447,8 @@
       updateSlide();
     }
   }
+
+  updateSlide();
 </script>
 
 </body>

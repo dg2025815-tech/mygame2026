@@ -379,18 +379,26 @@
       meteors.forEach(m => {
         ctx.beginPath();
         if (m.isBomb) {
-          // 폭탄 💣 디자인 (위험한 빨간색 + 불꽃 심지)
-          ctx.fillStyle = '#ff2222';
-          ctx.strokeStyle = '#880000';
-          ctx.lineWidth = 3;
+          // 폭탄 💣 디자인 (검은색 바디 + 테두리 + 불꽃 심지)
+          ctx.fillStyle = '#1a1a24';
+          ctx.strokeStyle = '#ff4b4b'; // 위험을 알리는 붉은 테두리
+          ctx.lineWidth = 2;
           ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
 
-          // 심지 불빛
+          // 심지 선
+          ctx.strokeStyle = '#cccccc';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(m.x, m.y - m.r);
+          ctx.lineTo(m.x + 3, m.y - m.r - 5);
+          ctx.stroke();
+
+          // 심지 타오르는 불꽃
           ctx.fillStyle = '#ffea00';
           ctx.beginPath();
-          ctx.arc(m.x, m.y - m.r - 2, 4, 0, Math.PI * 2);
+          ctx.arc(m.x + 3, m.y - m.r - 5, 3.5, 0, Math.PI * 2);
           ctx.fill();
         } else {
           // 일반 운석 디자인

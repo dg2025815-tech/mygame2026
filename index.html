@@ -2,47 +2,40 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>우주 운석 파괴자 🚀</title>
 <style>
   * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent;
     user-select: none;
-    -webkit-user-select: none;
   }
 
-  html, body {
-    width: 100%;
-    height: 100%;
+  body {
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
     background-color: #050510;
-    font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    font-family: sans-serif;
   }
 
   #gameCanvas {
-    position: absolute;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 100%;
     display: block;
-    background: radial-gradient(circle at center, #111133 0%, #050510 100%);
   }
 
   #hud {
     position: absolute;
     top: 15px;
-    left: 0;
-    width: 100%;
-    padding: 0 20px;
+    left: 20px;
+    right: 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     pointer-events: none;
-    z-index: 10;
+    color: white;
   }
 
   #livesDisplay {
@@ -50,7 +43,7 @@
   }
 
   #scoreDisplay {
-    font-size: 0.85rem;
+    font-size: 0.85rem; /* 요구사항: 아주 작게 표시 */
     color: rgba(255, 255, 255, 0.7);
     font-family: monospace;
     font-weight: bold;
@@ -65,8 +58,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 100;
-    background: rgba(5, 5, 16, 0.6);
+    background: rgba(0, 0, 0, 0.7);
   }
 
   .screen {
@@ -75,13 +67,12 @@
     align-items: center;
     text-align: center;
     color: white;
-    background: rgba(15, 15, 35, 0.9);
+    background: #111122;
     border: 2px solid #00fff0;
-    padding: 30px 25px;
-    border-radius: 20px;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 350px;
     width: 90%;
-    max-width: 380px;
-    box-shadow: 0 0 20px rgba(0, 255, 240, 0.3);
   }
 
   .screen.active {
@@ -90,71 +81,30 @@
 
   h1 {
     font-size: 1.8rem;
-    margin-bottom: 15px;
     color: #00fff0;
-    text-shadow: 0 0 10px rgba(0, 255, 240, 0.5);
+    margin-bottom: 15px;
   }
 
   p {
     font-size: 0.95rem;
-    margin-bottom: 25px;
     line-height: 1.5;
-    color: #ddddff;
+    margin-bottom: 20px;
+    color: #ccc;
   }
 
-  .btn {
-    background: linear-gradient(135deg, #00c6ff, #0072ff);
+  button {
+    background: #0072ff;
     color: white;
     border: none;
-    padding: 14px 35px;
+    padding: 12px 30px;
     font-size: 1.1rem;
     font-weight: bold;
-    border-radius: 30px;
+    border-radius: 25px;
     cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 114, 255, 0.5);
-    width: 80%;
   }
 
-  .btn:active {
-    transform: scale(0.96);
-  }
-
-  #mobileControls {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 20px;
-    pointer-events: none;
-    z-index: 20;
-  }
-
-  .touch-btn {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: white;
-    padding: 15px 25px;
-    border-radius: 15px;
-    font-size: 1.1rem;
-    font-weight: bold;
-    pointer-events: auto;
-    backdrop-filter: blur(4px);
-  }
-
-  .touch-btn:active {
-    background: rgba(0, 255, 240, 0.4);
-  }
-
-  #fireBtn {
-    background: rgba(255, 75, 75, 0.3);
-    border-color: rgba(255, 75, 75, 0.5);
-    padding: 15px 35px;
-  }
-
-  #fireBtn:active {
-    background: rgba(255, 75, 75, 0.6);
+  button:hover {
+    background: #00c6ff;
   }
 </style>
 </head>
@@ -168,29 +118,22 @@
 </div>
 
 <div id="uiOverlay">
+  <!-- 시작 화면 -->
   <div class="screen active" id="startScreen">
     <h1>🚀 우주 운석 파괴자</h1>
-    <p>운석 <b>20개</b>를 파괴하면 승리!<br><br>⌨️ <b>PC</b>: ← → 이동 / Space 발사<br>📱 <b>모바일</b>: 하단 터치 버튼</p>
-    <button class="btn" id="startBtn">게임 시작</button>
+    <p>운석 <b>20개</b>를 부수면 승리합니다!<br><br>⌨️ <b>조작법</b><br>이동: 좌우 방향키 (← →)<br>발사: 스페이스바 (Space)</p>
+    <button id="startBtn">게임 시작</button>
   </div>
 
+  <!-- 결과 화면 -->
   <div class="screen" id="resultScreen">
     <h1 id="resultTitle">승리!</h1>
     <p id="resultDesc">모든 운석을 파괴했습니다.</p>
-    <button class="btn" id="retryBtn">다시 하기</button>
+    <button id="retryBtn">다시 하기</button>
   </div>
-</div>
-
-<div id="mobileControls">
-  <div style="display: flex; gap: 10px;">
-    <div class="touch-btn" id="leftBtn">◀</div>
-    <div class="touch-btn" id="rightBtn">▶</div>
-  </div>
-  <div class="touch-btn" id="fireBtn">🔥 FIRE</div>
 </div>
 
 <script>
-window.addEventListener('load', function() {
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   
@@ -212,19 +155,20 @@ window.addEventListener('load', function() {
   let lives = 3;
   let frameCount = 0;
 
-  let player, bullets, meteors, stars;
+  let player = { x: 0, y: 0, w: 40, h: 50, speed: 9, lastShot: 0 };
+  let bullets = [];
+  let meteors = [];
+  let stars = [];
   let keys = { left: false, right: false, space: false };
 
-  function initStars() {
-    stars = [];
-    for (let i = 0; i < 60; i++) {
-      stars.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: Math.random() * 2 + 0.5,
-        speed: Math.random() * 0.8 + 0.2
-      });
-    }
+  // 별 배경 생성
+  for (let i = 0; i < 70; i++) {
+    stars.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      size: Math.random() * 2 + 0.5,
+      speed: Math.random() * 1 + 0.2
+    });
   }
 
   function initGame() {
@@ -234,17 +178,10 @@ window.addEventListener('load', function() {
     bullets = [];
     meteors = [];
     
-    player = {
-      width: 40,
-      height: 50,
-      x: canvas.width / 2,
-      y: canvas.height - 100,
-      speed: 8,
-      lastShot: 0
-    };
+    player.x = canvas.width / 2;
+    player.y = canvas.height - 80;
 
     updateHUD();
-    initStars();
   }
 
   function updateHUD() {
@@ -254,91 +191,79 @@ window.addEventListener('load', function() {
 
   function shoot() {
     const now = Date.now();
-    if (now - player.lastShot > 180) {
+    if (now - player.lastShot > 160) {
       bullets.push({
         x: player.x,
-        y: player.y - player.height / 2,
-        width: 6,
-        height: 15,
-        speed: 12
+        y: player.y - player.h / 2,
+        w: 6,
+        h: 16,
+        speed: 14
       });
       player.lastShot = now;
     }
   }
 
   function createMeteor() {
-    const radius = Math.random() * 15 + 20;
+    const r = Math.random() * 15 + 18;
     meteors.push({
-      x: radius + Math.random() * (canvas.width - radius * 2),
-      y: -radius,
-      radius: radius,
+      x: r + Math.random() * (canvas.width - r * 2),
+      y: -r,
+      r: r,
       speed: Math.random() * 2 + 2.5
     });
   }
 
   function update() {
-    if (gameState !== 'playing') return;
-
-    frameCount++;
-
+    // 별 이동 (항상 동작)
     stars.forEach(s => {
       s.y += s.speed;
       if (s.y > canvas.height) s.y = 0;
     });
 
-    if (keys.left && player.x - player.width / 2 > 0) {
-      player.x -= player.speed;
-    }
-    if (keys.right && player.x + player.width / 2 < canvas.width) {
-      player.x += player.speed;
-    }
-    if (keys.space) {
-      shoot();
-    }
+    if (gameState !== 'playing') return;
 
-    if (frameCount % 50 === 0) {
-      createMeteor();
-    }
+    frameCount++;
 
+    if (keys.left && player.x - player.w / 2 > 0) player.x -= player.speed;
+    if (keys.right && player.x + player.w / 2 < canvas.width) player.x += player.speed;
+    if (keys.space) shoot();
+
+    if (frameCount % 45 === 0) createMeteor();
+
+    // 총알 이동
     for (let i = bullets.length - 1; i >= 0; i--) {
-      let b = bullets[i];
-      b.y -= b.speed;
-      if (b.y < -20) bullets.splice(i, 1);
+      bullets[i].y -= bullets[i].speed;
+      if (bullets[i].y < -20) bullets.splice(i, 1);
     }
 
+    // 운석 이동 및 충돌
     for (let i = meteors.length - 1; i >= 0; i--) {
       let m = meteors[i];
       m.y += m.speed;
 
-      if (m.y - m.radius > canvas.height) {
+      if (m.y - m.r > canvas.height) {
         meteors.splice(i, 1);
         continue;
       }
 
-      const distToPlayer = Math.hypot(player.x - m.x, player.y - m.y);
-      if (distToPlayer < m.radius + player.width / 2) {
+      // 비행선 충돌
+      if (Math.hypot(player.x - m.x, player.y - m.y) < m.r + player.w / 2) {
         meteors.splice(i, 1);
         lives--;
         updateHUD();
-        if (lives <= 0) {
-          endGame(false);
-        }
+        if (lives <= 0) endGame(false);
         continue;
       }
 
+      // 총알 충돌
       for (let j = bullets.length - 1; j >= 0; j--) {
         let b = bullets[j];
-        const distToBullet = Math.hypot(b.x - m.x, b.y - m.y);
-        
-        if (distToBullet < m.radius + b.width) {
+        if (Math.hypot(b.x - m.x, b.y - m.y) < m.r + b.w) {
           bullets.splice(j, 1);
           meteors.splice(i, 1);
           score++;
           updateHUD();
-
-          if (score >= 20) {
-            endGame(true);
-          }
+          if (score >= 20) endGame(true);
           break;
         }
       }
@@ -346,8 +271,10 @@ window.addEventListener('load', function() {
   }
 
   function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#050510';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // 별
     ctx.fillStyle = '#ffffff';
     stars.forEach(s => {
       ctx.beginPath();
@@ -356,34 +283,36 @@ window.addEventListener('load', function() {
     });
 
     if (gameState === 'playing') {
+      // 비행선
       ctx.save();
       ctx.translate(player.x, player.y);
-      
       ctx.fillStyle = '#00fff0';
       ctx.beginPath();
-      ctx.moveTo(0, -player.height / 2);
-      ctx.lineTo(-player.width / 2, player.height / 2);
-      ctx.lineTo(player.width / 2, player.height / 2);
+      ctx.moveTo(0, -player.h / 2);
+      ctx.lineTo(-player.w / 2, player.h / 2);
+      ctx.lineTo(player.w / 2, player.h / 2);
       ctx.closePath();
       ctx.fill();
 
       ctx.fillStyle = '#ff4b4b';
       ctx.beginPath();
-      ctx.arc(0, player.height / 2 + 3, 8, 0, Math.PI * 2);
+      ctx.arc(0, player.h / 2 + 2, 7, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
 
+      // 총알
       ctx.fillStyle = '#ffea00';
       bullets.forEach(b => {
-        ctx.fillRect(b.x - b.width / 2, b.y, b.width, b.height);
+        ctx.fillRect(b.x - b.w / 2, b.y, b.w, b.h);
       });
 
+      // 운석
       meteors.forEach(m => {
         ctx.fillStyle = '#a8927a';
         ctx.strokeStyle = '#5a4d41';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       });
@@ -412,13 +341,13 @@ window.addEventListener('load', function() {
     const resultDesc = document.getElementById('resultDesc');
 
     if (isWin) {
-      resultTitle.textContent = '🎉 MISSION COMPLETE!';
+      resultTitle.textContent = '🎉 WIN!';
       resultTitle.style.color = '#00fff0';
       resultDesc.textContent = '운석 20개를 모두 파괴했습니다!';
     } else {
-      resultTitle.textContent = '💥 MISSION FAILED';
+      resultTitle.textContent = '💥 GAME OVER';
       resultTitle.style.color = '#ff4b4b';
-      resultDesc.textContent = '목숨을 모두 잃었습니다. 다시 도전하세요!';
+      resultDesc.textContent = '목숨을 모두 잃었습니다.';
     }
   }
 
@@ -440,21 +369,7 @@ window.addEventListener('load', function() {
     if (e.code === 'Space') keys.space = false;
   });
 
-  const leftBtn = document.getElementById('leftBtn');
-  const rightBtn = document.getElementById('rightBtn');
-  const fireBtn = document.getElementById('fireBtn');
-
-  leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = true; });
-  leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys.left = false; });
-
-  rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = false; keys.right = true; });
-  rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys.right = false; });
-
-  fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.space = true; });
-  fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys.space = false; });
-
   loop();
-});
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Flappy Friends 🐦</title>
+<title>우주 운석 파괴자 🚀</title>
 <style>
   * {
     margin: 0;
@@ -18,9 +18,9 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: #70c5ce;
+    background-color: #050510;
     font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
-    touch-action: manipulation;
+    touch-action: none;
   }
 
   #gameContainer {
@@ -34,10 +34,36 @@
 
   canvas {
     display: block;
-    background: linear-gradient(180deg, #70c5ce 0%, #a8e0e6 70%, #ded895 100%);
-    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    background: radial-gradient(circle at center, #111133 0%, #050510 100%);
+    box-shadow: 0 0 20px rgba(0,255,255,0.2);
   }
 
+  /* 게임 상단 HUD (목숨 및 점수) */
+  #hud {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    width: 100%;
+    padding: 0 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  #livesDisplay {
+    font-size: 1.2rem;
+  }
+
+  #scoreDisplay {
+    font-size: 0.85rem; /* 요구사항: 아주 작게 표시 */
+    color: #88ffffff;
+    font-family: monospace;
+    font-weight: bold;
+  }
+
+  /* 메인 UI 화면 (시작, 승리, 패배) */
   #uiOverlay {
     position: absolute;
     top: 0;
@@ -56,11 +82,13 @@
     align-items: center;
     text-align: center;
     color: white;
-    background: rgba(0, 0, 0, 0.75);
-    padding: 25px 20px;
+    background: rgba(10, 10, 30, 0.85);
+    border: 2px solid #4d96ff;
+    padding: 30px 20px;
     border-radius: 20px;
     width: 85%;
     max-width: 320px;
+    box-shadow: 0 0 15px rgba(77, 150, 255, 0.4);
   }
 
   .screen.active {
@@ -68,93 +96,73 @@
   }
 
   h1 {
-    font-size: 1.8rem;
-    margin-bottom: 10px;
-    color: #fff;
-    text-shadow: 2px 2px 0px #ff6b6b;
+    font-size: 1.6rem;
+    margin-bottom: 12px;
+    color: #00fff0;
+    text-shadow: 0 0 8px rgba(0, 255, 240, 0.6);
   }
 
-  h2 {
-    font-size: 1.1rem;
-    margin-bottom: 15px;
-    font-weight: normal;
-  }
-
-  .char-select {
-    display: flex;
-    gap: 10px;
+  p {
+    font-size: 0.9rem;
     margin-bottom: 20px;
-  }
-
-  .char-card {
-    background: rgba(255, 255, 255, 0.9);
-    border: 3px solid transparent;
-    border-radius: 12px;
-    padding: 8px;
-    cursor: pointer;
-    width: 75px;
-    transition: transform 0.15s;
-  }
-
-  .char-card.selected {
-    border-color: #ffd700;
-    transform: scale(1.08);
-    background: #ffffff;
-  }
-
-  .char-card canvas {
-    background: transparent;
-    box-shadow: none;
-    margin: 0 auto;
-    pointer-events: none;
-  }
-
-  .char-name {
-    color: #333;
-    font-size: 0.8rem;
-    font-weight: bold;
-    margin-top: 4px;
-    pointer-events: none;
+    line-height: 1.4;
+    color: #ddddff;
   }
 
   .btn {
-    background: #ff6b6b;
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
     color: white;
     border: none;
-    padding: 14px 32px;
-    font-size: 1.2rem;
+    padding: 12px 30px;
+    font-size: 1.1rem;
     font-weight: bold;
-    border-radius: 30px;
-    box-shadow: 0 4px 0 #d64545;
+    border-radius: 25px;
     cursor: pointer;
-    margin-top: 10px;
+    box-shadow: 0 4px 10px rgba(0, 114, 255, 0.4);
     width: 80%;
-    display: inline-block;
   }
 
   .btn:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 #d64545;
+    transform: scale(0.96);
   }
 
-  #scoreDisplay {
+  /* 모바일 컨트롤러 UI */
+  #mobileControls {
     position: absolute;
-    top: 8%;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 3rem;
-    color: white;
-    font-weight: bold;
-    text-shadow: 3px 3px 0 rgba(0,0,0,0.3);
-    display: none;
+    bottom: 15px;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
     pointer-events: none;
-    z-index: 50;
+    z-index: 20;
   }
 
-  .guide {
-    font-size: 0.8rem;
-    margin-top: 12px;
-    opacity: 0.8;
+  .touch-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 15px;
+    font-size: 1rem;
+    font-weight: bold;
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+  }
+
+  .touch-btn:active {
+    background: rgba(0, 255, 240, 0.4);
+  }
+
+  #fireBtn {
+    background: rgba(255, 75, 75, 0.3);
+    border-color: rgba(255, 75, 75, 0.5);
+    padding: 15px 35px;
+  }
+
+  #fireBtn:active {
+    background: rgba(255, 75, 75, 0.6);
   }
 </style>
 </head>
@@ -162,25 +170,35 @@
 
 <div id="gameContainer">
   <canvas id="gameCanvas"></canvas>
-  <div id="scoreDisplay">0</div>
+
+  <div id="hud">
+    <div id="livesDisplay">❤️❤️❤️</div>
+    <div id="scoreDisplay">DESTROYED: 0 / 20</div>
+  </div>
 
   <div id="uiOverlay">
     <!-- 시작 화면 -->
     <div class="screen active" id="startScreen">
-      <h1>Flappy Friends</h1>
-      <h2>캐릭터를 선택하세요</h2>
-      <div class="char-select" id="charSelect"></div>
+      <h1>🚀 우주 운석 파괴자</h1>
+      <p>운석 <b>20개</b>를 부수면 승리합니다!<br><br>⌨️ <b>PC</b>: ← → 이동 / Space 발사<br>📱 <b>모바일</b>: 하단 버튼 터치</p>
       <div class="btn" id="startBtn">게임 시작</div>
-      <p class="guide">📱 시작 후 화면 어디든 눌러 점프!</p>
     </div>
 
-    <!-- 게임오버 화면 -->
-    <div class="screen" id="gameOverScreen">
-      <h1>게임 오버!</h1>
-      <h2 id="finalScore" style="margin-bottom: 5px;">점수: 0</h2>
-      <h2 id="bestScore" style="margin-bottom: 15px; color: #ffd700;">최고 점수: 0</h2>
+    <!-- 결과 화면 -->
+    <div class="screen" id="resultScreen">
+      <h1 id="resultTitle">승리!</h1>
+      <p id="resultDesc">모든 운석을 파괴했습니다.</p>
       <div class="btn" id="retryBtn">다시 하기</div>
     </div>
+  </div>
+
+  <!-- 모바일용 조작 버튼 -->
+  <div id="mobileControls">
+    <div style="display: flex; gap: 10px;">
+      <div class="touch-btn" id="leftBtn">◀</div>
+      <div class="touch-btn" id="rightBtn">▶</div>
+    </div>
+    <div class="touch-btn" id="fireBtn">🔥 FIRE</div>
   </div>
 </div>
 
@@ -188,9 +206,14 @@
 window.addEventListener('load', function() {
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
+  
+  const livesDisplay = document.getElementById('livesDisplay');
   const scoreDisplay = document.getElementById('scoreDisplay');
   const uiOverlay = document.getElementById('uiOverlay');
+  const startScreen = document.getElementById('startScreen');
+  const resultScreen = document.getElementById('resultScreen');
 
+  // 캔버스 크기 조정
   function resizeCanvas() {
     let w = window.innerWidth;
     let h = window.innerHeight;
@@ -205,219 +228,210 @@ window.addEventListener('load', function() {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
-  const characters = [
-    { name: '병아리', body: '#FFD93D', wing: '#FFA500', accent: '#FF6B6B', type: 'chick' },
-    { name: '문어', body: '#FF6B9D', wing: '#C44569', accent: '#FFFFFF', type: 'octopus' },
-    { name: '드래곤', body: '#6BCB77', wing: '#4D96FF', accent: '#FFD93D', type: 'dragon' }
-  ];
-  let selectedCharIndex = 0;
+  // 게임 상태 변수
+  let gameState = 'start';
+  let score = 0;
+  let lives = 3;
+  let frameCount = 0;
 
-  function drawBird(context, x, y, rotation, charData, isPreview) {
-    context.save();
-    context.translate(x, y);
-    if (!isPreview) context.rotate(rotation);
-    
-    const size = isPreview ? 18 : canvas.width * 0.045;
+  // 객체 변수
+  let player, bullets, meteors, stars;
+  let keys = { left: false, right: false, space: false };
 
-    if (charData.type === 'chick') {
-      context.fillStyle = charData.body;
-      context.beginPath();
-      context.ellipse(0, 0, size, size * 0.85, 0, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = charData.wing;
-      context.beginPath();
-      context.ellipse(-size*0.3, size*0.1, size*0.5, size*0.35, -0.3, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = '#333';
-      context.beginPath();
-      context.arc(size*0.35, -size*0.15, size*0.15, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = charData.accent;
-      context.beginPath();
-      context.moveTo(size*0.7, 0);
-      context.lineTo(size*1.15, size*0.08);
-      context.lineTo(size*0.7, size*0.25);
-      context.closePath();
-      context.fill();
-    } 
-    else if (charData.type === 'octopus') {
-      context.fillStyle = charData.body;
-      context.beginPath();
-      context.arc(0, -size*0.1, size*0.85, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = charData.wing;
-      for (let i = -2; i <= 2; i++) {
-        context.beginPath();
-        context.arc(i * size*0.3, size*0.5, size*0.22, 0, Math.PI * 2);
-        context.fill();
-      }
-
-      context.fillStyle = '#333';
-      context.beginPath();
-      context.arc(-size*0.2, -size*0.15, size*0.12, 0, Math.PI * 2);
-      context.arc(size*0.2, -size*0.15, size*0.12, 0, Math.PI * 2);
-      context.fill();
-    } 
-    else if (charData.type === 'dragon') {
-      context.fillStyle = charData.body;
-      context.beginPath();
-      context.ellipse(0, 0, size, size * 0.85, 0, 0, Math.PI * 2);
-      context.fill();
-
-      context.fillStyle = charData.wing;
-      context.beginPath();
-      context.moveTo(-size*0.2, -size*0.1);
-      context.lineTo(-size*0.9, -size*0.6);
-      context.lineTo(-size*0.4, size*0.3);
-      context.closePath();
-      context.fill();
-
-      context.fillStyle = charData.accent;
-      context.beginPath();
-      context.moveTo(-size*0.2, -size*0.7);
-      context.lineTo(-size*0.1, -size*1.1);
-      context.lineTo(size*0.1, -size*0.7);
-      context.closePath();
-      context.fill();
-
-      context.fillStyle = '#333';
-      context.beginPath();
-      context.arc(size*0.35, -size*0.15, size*0.15, 0, Math.PI * 2);
-      context.fill();
+  // 별 배경 생성
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < 40; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2,
+        speed: Math.random() * 0.5 + 0.2
+      });
     }
-    context.restore();
   }
 
-  const charSelectDiv = document.getElementById('charSelect');
-  characters.forEach((char, index) => {
-    const card = document.createElement('div');
-    card.className = 'char-card' + (index === 0 ? ' selected' : '');
-    
-    const pCanvas = document.createElement('canvas');
-    pCanvas.width = 50;
-    pCanvas.height = 50;
-    
-    const name = document.createElement('div');
-    name.className = 'char-name';
-    name.textContent = char.name;
-
-    card.appendChild(pCanvas);
-    card.appendChild(name);
-    
-    card.onclick = function() {
-      document.querySelectorAll('.char-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      selectedCharIndex = index;
-    };
-
-    charSelectDiv.appendChild(card);
-    drawBird(pCanvas.getContext('2d'), 25, 25, 0, char, true);
-  });
-
-  let gameState = 'start'; 
-  let bird, pipes, score, bestScore, frameCount;
-
-  bestScore = parseInt(localStorage.getItem('flappyBest_v4')) || 0;
-
+  // 게임 초기화
   function initGame() {
-    bird = {
-      x: canvas.width * 0.28,
-      y: canvas.height * 0.4,
-      velocity: 0,
-      rotation: 0
-    };
-    pipes = [];
     score = 0;
+    lives = 3;
     frameCount = 0;
+    bullets = [];
+    meteors = [];
+    
+    player = {
+      width: canvas.width * 0.08,
+      height: canvas.width * 0.1,
+      x: canvas.width / 2,
+      y: canvas.height - (canvas.height * 0.12),
+      speed: canvas.width * 0.015,
+      lastShot: 0
+    };
+
+    updateHUD();
+    initStars();
   }
 
-  function flap() {
-    if (gameState === 'playing') {
-      bird.velocity = -canvas.height * 0.012;
+  function updateHUD() {
+    livesDisplay.textContent = '❤️'.repeat(Math.max(0, lives));
+    scoreDisplay.textContent = `DESTROYED: ${score} / 20`;
+  }
+
+  // 총알 발사
+  function shoot() {
+    const now = Date.now();
+    if (now - player.lastShot > 200) { // 0.2초 쿨타임
+      bullets.push({
+        x: player.x,
+        y: player.y - player.height / 2,
+        radius: canvas.width * 0.01,
+        speed: canvas.height * 0.02
+      });
+      player.lastShot = now;
     }
   }
 
-  function createPipe() {
-    const pipeGap = canvas.height * 0.26;
-    const minH = canvas.height * 0.1;
-    const maxH = canvas.height - pipeGap - (canvas.height * 0.15);
-    const topH = minH + Math.random() * (maxH - minH);
-
-    pipes.push({
-      x: canvas.width,
-      width: canvas.width * 0.14,
-      topHeight: topH,
-      bottomY: topH + pipeGap,
-      passed: false
+  // 운석 생성
+  function createMeteor() {
+    const radius = canvas.width * (0.04 + Math.random() * 0.03); // 크기 밸런스
+    meteors.push({
+      x: radius + Math.random() * (canvas.width - radius * 2),
+      y: -radius,
+      radius: radius,
+      speed: canvas.height * (0.004 + Math.random() * 0.003), // 낙하 속도
+      hp: 1
     });
   }
 
+  // 업데이트
   function update() {
     if (gameState !== 'playing') return;
 
     frameCount++;
 
-    bird.velocity += canvas.height * 0.00065;
-    bird.y += bird.velocity;
-    bird.rotation = Math.min(Math.max(bird.velocity * 0.05, -0.4), 0.8);
+    // 별 이동
+    stars.forEach(s => {
+      s.y += s.speed;
+      if (s.y > canvas.height) s.y = 0;
+    });
 
-    if (frameCount % 90 === 0) {
-      createPipe();
+    // 플레이어 이동
+    if (keys.left && player.x - player.width/2 > 0) {
+      player.x -= player.speed;
+    }
+    if (keys.right && player.x + player.width/2 < canvas.width) {
+      player.x += player.speed;
+    }
+    if (keys.space) {
+      shoot();
     }
 
-    const groundY = canvas.height - (canvas.height * 0.1);
-    const birdR = canvas.width * 0.04;
-
-    if (bird.y + birdR >= groundY || bird.y - birdR <= 0) {
-      endGame();
+    // 운석 생성 (약 1초마다)
+    if (frameCount % 60 === 0) {
+      createMeteor();
     }
 
-    for (let i = 0; i < pipes.length; i++) {
-      let p = pipes[i];
-      p.x -= canvas.width * 0.006;
+    // 총알 이동
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      let b = bullets[i];
+      b.y -= b.speed;
+      if (b.y < 0) bullets.splice(i, 1);
+    }
 
-      if (!p.passed && p.x + p.width < bird.x) {
-        p.passed = true;
-        score++;
-        scoreDisplay.textContent = score;
+    // 운석 이동 및 충돌 검사
+    for (let i = meteors.length - 1; i >= 0; i--) {
+      let m = meteors[i];
+      m.y += m.speed;
+
+      // 화면 아래로 탈출 시 (목숨 차감 없이 소멸만 처리)
+      if (m.y - m.radius > canvas.height) {
+        meteors.splice(i, 1);
+        continue;
       }
 
-      if (bird.x + birdR > p.x && bird.x - birdR < p.x + p.width) {
-        if (bird.y - birdR < p.topHeight || bird.y + birdR > p.bottomY) {
-          endGame();
+      // 비행선과 운석 충돌
+      const distToPlayer = Math.hypot(player.x - m.x, player.y - m.y);
+      if (distToPlayer < m.radius + player.width / 2) {
+        meteors.splice(i, 1);
+        lives--;
+        updateHUD();
+        if (lives <= 0) {
+          endGame(false);
+        }
+        continue;
+      }
+
+      // 총알과 운석 충돌
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        let b = bullets[j];
+        const distToBullet = Math.hypot(b.x - m.x, b.y - m.y);
+        
+        if (distToBullet < m.radius + b.radius) {
+          bullets.splice(j, 1);
+          meteors.splice(i, 1);
+          score++;
+          updateHUD();
+
+          if (score >= 20) {
+            endGame(true);
+          }
+          break;
         }
       }
     }
-
-    pipes = pipes.filter(p => p.x > -p.width);
   }
 
+  // 렌더링
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const groundY = canvas.height - (canvas.height * 0.1);
-
-    pipes.forEach(p => {
-      ctx.fillStyle = '#5cb85c';
-      ctx.fillRect(p.x, 0, p.width, p.topHeight);
-      ctx.fillRect(p.x, p.bottomY, p.width, groundY - p.bottomY);
-
-      ctx.fillStyle = '#4a934a';
-      ctx.fillRect(p.x - 3, p.topHeight - 15, p.width + 6, 15);
-      ctx.fillRect(p.x - 3, p.bottomY, p.width + 6, 15);
+    // 배경 별
+    ctx.fillStyle = '#ffffff';
+    stars.forEach(s => {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+      ctx.fill();
     });
 
-    ctx.fillStyle = '#ded895';
-    ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
-    ctx.fillStyle = '#c9b968';
-    ctx.fillRect(0, groundY, canvas.width, 10);
-
     if (gameState === 'playing') {
-      drawBird(ctx, bird.x, bird.y, bird.rotation, characters[selectedCharIndex], false);
+      // 플레이어 (비행선) 그리기
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      
+      // 비행선 몸체
+      ctx.fillStyle = '#00fff0';
+      ctx.beginPath();
+      ctx.moveTo(0, -player.height / 2);
+      ctx.lineTo(-player.width / 2, player.height / 2);
+      ctx.lineTo(player.width / 2, player.height / 2);
+      ctx.closePath();
+      ctx.fill();
+
+      // 날개 및 엔진 빛
+      ctx.fillStyle = '#ff4b4b';
+      ctx.beginPath();
+      ctx.arc(0, player.height / 2, player.width * 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // 총알 그리기
+      ctx.fillStyle = '#ffea00';
+      bullets.forEach(b => {
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // 운석 그리기
+      meteors.forEach(m => {
+        ctx.fillStyle = '#a8927a';
+        ctx.strokeStyle = '#6e5d4f';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, m.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      });
     }
   }
 
@@ -428,52 +442,64 @@ window.addEventListener('load', function() {
   }
 
   function startGame() {
-    document.getElementById('startScreen').classList.remove('active');
-    document.getElementById('gameOverScreen').classList.remove('active');
-    uiOverlay.style.display = 'none'; // UI 완전히 숨김
-    
-    scoreDisplay.style.display = 'block';
-    scoreDisplay.textContent = '0';
-
     initGame();
     gameState = 'playing';
+    uiOverlay.style.display = 'none';
   }
 
-  function endGame() {
-    gameState = 'gameover';
-    uiOverlay.style.display = 'flex'; // UI 다시 표시
-    scoreDisplay.style.display = 'none';
+  function endGame(isWin) {
+    gameState = isWin ? 'win' : 'gameover';
+    uiOverlay.style.display = 'flex';
+    startScreen.classList.remove('active');
+    resultScreen.classList.add('active');
 
-    if (score > bestScore) {
-      bestScore = score;
-      localStorage.setItem('flappyBest_v4', bestScore);
+    const resultTitle = document.getElementById('resultTitle');
+    const resultDesc = document.getElementById('resultDesc');
+
+    if (isWin) {
+      resultTitle.textContent = '🎉 MISSION COMPLETE!';
+      resultTitle.style.color = '#00fff0';
+      resultDesc.textContent = '모든 운석(20개)을 성공적으로 파괴했습니다!';
+    } else {
+      resultTitle.textContent = '💥 MISSION FAILED';
+      resultTitle.style.color = '#ff4b4b';
+      resultDesc.textContent = '목숨을 모두 잃었습니다. 다시 시도해보세요!';
     }
-
-    document.getElementById('finalScore').textContent = `점수: ${score}`;
-    document.getElementById('bestScore').textContent = `최고 점수: ${bestScore}`;
-    document.getElementById('gameOverScreen').classList.add('active');
   }
 
-  // 버튼 온클릭 이벤트
-  document.getElementById('startBtn').onclick = function() {
-    startGame();
-  };
-
+  // 버튼 이벤트
+  document.getElementById('startBtn').onclick = startGame;
   document.getElementById('retryBtn').onclick = function() {
-    document.getElementById('gameOverScreen').classList.remove('active');
-    document.getElementById('startScreen').classList.add('active');
+    resultScreen.classList.remove('active');
+    startScreen.classList.add('active');
   };
 
-  // 게임 조작 (전체 화면 클릭/터치)
-  window.addEventListener('pointerdown', function(e) {
-    if (gameState === 'playing') {
-      flap();
-    }
+  // 키보드 조작 (PC)
+  window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowLeft') keys.left = true;
+    if (e.code === 'ArrowRight') keys.right = true;
+    if (e.code === 'Space') keys.space = true;
   });
 
-  window.addEventListener('keydown', function(e) {
-    if (e.code === 'Space') flap();
+  window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowLeft') keys.left = false;
+    if (e.code === 'ArrowRight') keys.right = false;
+    if (e.code === 'Space') keys.space = false;
   });
+
+  // 터치 조작 (모바일)
+  const leftBtn = document.getElementById('leftBtn');
+  const rightBtn = document.getElementById('rightBtn');
+  const fireBtn = document.getElementById('fireBtn');
+
+  leftBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = true; });
+  leftBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys.left = false; });
+
+  rightBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.left = false; keys.right = true; });
+  rightBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys.right = false; });
+
+  fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); keys.space = true; });
+  fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); keys.space = false; });
 
   loop();
 });

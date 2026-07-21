@@ -122,7 +122,13 @@
   <!-- 시작 화면 -->
   <div class="screen active" id="startScreen">
     <h1>🚀 우주 운석 파괴자</h1>
-    <p>운석 <b>20개</b>를 부수면 승리합니다!<br><br>⌨️ <b>조작법</b><br>이동: 좌우 방향키 (← →)<br>발사: 스페이스바 (Space)</p>
+    <p>
+      운석 <b>20개</b>를 부수면 승리합니다!<br>
+      ⚠️ <b>폭탄💣을 맞추면 점수 -2점!</b><br><br>
+      ⌨️ <b>조작법</b><br>
+      이동: 좌우 방향키 (← →)<br>
+      발사: 스페이스바 (Space)
+    </p>
     <button id="startBtn">게임 시작</button>
   </div>
 
@@ -162,9 +168,10 @@
   let stars = [];
   let keys = { left: false, right: false, space: false };
 
-  // 효과 전용 변수 (폭죽 & 번개)
+  // 효과 전용 변수 (폭죽 & 번개 & 경고)
   let fireworks = [];
   let lightningOpacity = 0;
+  let bombPenaltyFlash = 0;
 
   // 별 배경 생성
   for (let i = 0; i < 70; i++) {
@@ -184,6 +191,7 @@
     meteors = [];
     fireworks = [];
     lightningOpacity = 0;
+    bombPenaltyFlash = 0;
     
     player.x = canvas.width / 2;
     player.y = canvas.height - 80;
@@ -210,13 +218,16 @@
     }
   }
 
+  // 운석/폭탄 생성 함수 (4/5 확률: 운석, 1/5 확률: 폭탄)
   function createMeteor() {
     const r = Math.random() * 15 + 18;
+    const isBomb = Math.random() < 0.2; // 20% (1/5) 확률로 폭탄
     meteors.push({
       x: r + Math.random() * (canvas.width - r * 2),
       y: -r,
       r: r,
-      speed: Math.random() * 2 + 2.5
+      speed: Math.random() * 2 + 2.5,
+      isBomb: isBomb
     });
   }
 
@@ -268,6 +279,8 @@
 
     if (gameState !== 'playing') return;
 
+    if (bombPenaltyFlash > 0) bombPenaltyFlash -= 0.05;
+
     frameCount++;
 
     if (keys.left && player.x - player.w / 2 > 0) player.x -= player.speed;
@@ -282,7 +295,7 @@
       if (bullets[i].y < -20) bullets.splice(i, 1);
     }
 
-    // 운석 이동 및 충돌
+    // 운석/폭탄 이동 및 충돌
     for (let i = meteors.length - 1; i >= 0; i--) {
       let m = meteors[i];
       m.y += m.speed;
@@ -292,7 +305,7 @@
         continue;
       }
 
-      // 비행선 충돌
+      // 비행선 충돌 (운석이든 폭탄이든 부딪히면 목숨 -1)
       if (Math.hypot(player.x - m.x, player.y - m.y) < m.r + player.w / 2) {
         meteors.splice(i, 1);
         lives--;
@@ -306,9 +319,19 @@
         let b = bullets[j];
         if (Math.hypot(b.x - m.x, b.y - m.y) < m.r + b.w) {
           bullets.splice(j, 1);
+          
+          if (m.isBomb) {
+            // 폭탄을 맞춘 경우: -2점 감점! (최소 0점)
+            score = Math.max(0, score - 2);
+            bombPenaltyFlash = 0.4; // 붉은 경고 반짝임
+          } else {
+            // 일반 운석을 맞춘 경우: +1점
+            score++;
+          }
+
           meteors.splice(i, 1);
-          score++;
           updateHUD();
+
           if (score >= 20) endGame(true);
           break;
         }
@@ -352,16 +375,39 @@
         ctx.fillRect(b.x - b.w / 2, b.y, b.w, b.h);
       });
 
-      // 운석
+      // 운석 및 폭탄 그리기
       meteors.forEach(m => {
-        ctx.fillStyle = '#a8927a';
-        ctx.strokeStyle = '#5a4d41';
-        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
+        if (m.isBomb) {
+          // 폭탄 💣 디자인 (위험한 빨간색 + 불꽃 심지)
+          ctx.fillStyle = '#ff2222';
+          ctx.strokeStyle = '#880000';
+          ctx.lineWidth = 3;
+          ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // 심지 불빛
+          ctx.fillStyle = '#ffea00';
+          ctx.beginPath();
+          ctx.arc(m.x, m.y - m.r - 2, 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // 일반 운석 디자인
+          ctx.fillStyle = '#a8927a';
+          ctx.strokeStyle = '#5a4d41';
+          ctx.lineWidth = 2;
+          ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
       });
+
+      // 폭탄 맞췄을 때 붉은 페널티 섬광
+      if (bombPenaltyFlash > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${bombPenaltyFlash})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
 
     // 승리 폭죽 그리기
@@ -408,12 +454,12 @@
       resultTitle.textContent = '🎉 WIN!';
       resultTitle.style.color = '#00fff0';
       resultDesc.textContent = '운석 20개를 모두 파괴했습니다!';
-      for(let i=0; i<5; i++) createFirework(); // 승리 즉시 연쇄 폭죽
+      for(let i=0; i<5; i++) createFirework();
     } else {
       resultTitle.textContent = '💥 GAME OVER';
       resultTitle.style.color = '#ff4b4b';
       resultDesc.textContent = '목숨을 모두 잃었습니다.';
-      lightningOpacity = 0.9; // 패배 즉시 강렬한 붉은 번개 섬광
+      lightningOpacity = 0.9;
     }
   }
 
